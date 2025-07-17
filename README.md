@@ -1,3 +1,4 @@
+```
 interview-backend/
 ├── package.json
 ├── .env
@@ -30,4 +31,4 @@ interview-backend/
 │   └── constants.js
 └── uploads/
     └── resumes/
-    
+```
