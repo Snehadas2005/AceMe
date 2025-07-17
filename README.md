@@ -30,5 +30,5 @@ interview-backend/
 │   ├── helpers.js
 │   └── constants.js
 └── uploads/
-    └── resumes/
+└── resumes/
 ```
