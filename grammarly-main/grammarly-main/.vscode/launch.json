@@ -1,0 +1,42 @@
+// A launch configuration that compiles the extension and then opens it inside a new window
+// Use IntelliSense to learn about possible attributes.
+// Hover to view descriptions of existing attributes.
+// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run Extension",
+      "type": "extensionHost",
+      "request": "launch",
+      "runtimeExecutable": "${execPath}",
+      "env": {
+        "DEBUG": "grammarly:*"
+      },
+      "args": [
+        "--disable-extensions",
+        "--extensionDevelopmentPath=${workspaceFolder}/extension",
+        "${workspaceFolder}/fixtures"
+      ],
+      "outFiles": ["${workspaceFolder}/extension/dist/*.js"],
+      "sourceMaps": false
+    },
+    {
+      "name": "Run Web Extension",
+      "type": "pwa-extensionHost",
+      "debugWebWorkerHost": true,
+      "request": "launch",
+      "runtimeExecutable": "${execPath}",
+      "env": {
+        "DEBUG": "grammarly:*"
+      },
+      "args": [
+        "--disable-extensions",
+        "--extensionDevelopmentPath=${workspaceFolder}/extension",
+        "--extensionDevelopmentKind=web",
+        "${workspaceFolder}/fixtures"
+      ],
+      "outFiles": ["${workspaceFolder}/extension/dist/*.js"]
+    }
+  ]
+}

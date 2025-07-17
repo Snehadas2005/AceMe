@@ -9,7 +9,6 @@ const parseResume = async (filePath) => {
     const ext = path.extname(filePath).toLowerCase();
     let text = '';
 
-    // Extract text based on file type
     if (ext === '.pdf') {
       const dataBuffer = fs.readFileSync(filePath);
       const pdfData = await pdf(dataBuffer);

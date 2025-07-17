@@ -1,0 +1,244 @@
+name: CI/CD
+'on':
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+    tags:
+      - v*
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Cache node packages
+        uses: actions/cache@v3
+        env:
+          cache-name: pnpm-modules
+        with:
+          key: >-
+            ${{ runner.os }}-build-${{ env.cache-name }}-${{
+            hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+          path: |
+            ~/.pnpm-store
+            ${{ github.workspace }}/.pnpm
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v2
+        with:
+          run_install: |
+            - recursive: true
+              args: [--frozen-lockfile]
+      - name: Build
+        run: pnpm run build
+      - name: Upload build artefact
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-artefact
+          retention-days: 30
+          path: |
+            ./packages/*/dist
+            ./extension/dist
+  build-windows:
+    name: Build on Windows
+    runs-on: windows-2022
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v2
+        with:
+          run_install: |
+            - recursive: true
+              args: [--frozen-lockfile]
+      - name: Build
+        run: pnpm run build
+
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Cache node packages
+        uses: actions/cache@v3
+        env:
+          cache-name: pnpm-modules
+        with:
+          key: >-
+            ${{ runner.os }}-build-${{ env.cache-name }}-${{
+            hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+          path: |
+            ~/.pnpm-store
+            ${{ github.workspace }}/.pnpm
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v2
+        with:
+          run_install: |
+            - recursive: true
+              args: [--frozen-lockfile]
+      - name: Download build artefact
+        uses: actions/download-artifact@v2
+        with:
+          name: build-artefact
+          path: .
+      - run: pnpm test
+  pre-release:
+    name: Pre-release
+    runs-on: ubuntu-latest
+    needs: test
+    concurrency:
+      group: pre-release
+      cancel-in-progress: true
+    environment: Pre Release
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Cache node packages
+        uses: actions/cache@v3
+        env:
+          cache-name: pnpm-modules
+        with:
+          key: >-
+            ${{ runner.os }}-build-${{ env.cache-name }}-${{
+            hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+          path: |
+            ~/.pnpm-store
+            ${{ github.workspace }}/.pnpm
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v2
+        with:
+          run_install: |
+            - recursive: true
+              args: [--frozen-lockfile]
+      - name: Download build artefact
+        uses: actions/download-artifact@v2
+        with:
+          name: build-artefact
+          path: .
+      - name: Publish Pre-release Extension
+        run: >
+          pnpm recursive --filter ./extension run build
+
+          pnpm recursive --filter ./extension run release
+        env:
+          RELEASE_CHANNEL: pre-release
+          VSCODE_MARKETPLACE_TOKEN: ${{ secrets.VSCE_TOKEN }}
+          OVSX_REGISTRY_TOKEN: ${{ secrets.OVSX_REGISTRY_TOKEN }}
+      - name: Publish Pre-release Packages
+        run: >
+          pnpm recursive exec -- pnpm version prerelease --preid=next-$(date
+          +%s) --no-commit-hooks --no-git-tag-version
+
+          echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' > .npmrc
+
+          pnpm recursive publish --tag next --access public --no-git-checks
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - uses: marvinpinto/action-automatic-releases@latest
+        with:
+          title: Development Build
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          automatic_release_tag: latest
+          prerelease: true
+          files: |
+            extension/*.vsix
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    needs: test
+    if: startsWith(github.event.ref, 'refs/tags/v')
+    concurrency:
+      group: release
+      cancel-in-progress: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Cache node packages
+        uses: actions/cache@v3
+        env:
+          cache-name: pnpm-modules
+        with:
+          key: >-
+            ${{ runner.os }}-build-${{ env.cache-name }}-${{
+            hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+          path: |
+            ~/.pnpm-store
+            ${{ github.workspace }}/.pnpm
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v2
+        with:
+          run_install: |
+            - recursive: true
+              args: [--frozen-lockfile]
+      - name: Download build artefact
+        uses: actions/download-artifact@v2
+        with:
+          name: build-artefact
+          path: .
+      - name: Publish Extension
+        run: >
+          pnpm recursive --filter ./extension run build
+
+          pnpm recursive --filter ./extension run release
+
+        env:
+          VSCODE_MARKETPLACE_TOKEN: ${{ secrets.VSCE_TOKEN }}
+          OVSX_REGISTRY_TOKEN: ${{ secrets.OVSX_REGISTRY_TOKEN }}
+        continue-on-error: true
+      - name: Publish Packages
+        run: |
+          echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}' > .npmrc
+          pnpm recursive publish --tag latest --access public --no-git-checks
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - uses: marvinpinto/action-automatic-releases@latest
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          prerelease: false
+          files: |
+            extension/*.vsix

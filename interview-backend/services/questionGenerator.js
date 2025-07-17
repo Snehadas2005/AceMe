@@ -111,7 +111,7 @@ const generateQuestions = async (resumeData) => {
     difficulty: "easy"
   });
 
-  return questions.slice(0, 12); // Return maximum 10 questions
+  return questions.slice(0, 10); // Return maximum 10 questions
 };
 
 module.exports = { generateQuestions };

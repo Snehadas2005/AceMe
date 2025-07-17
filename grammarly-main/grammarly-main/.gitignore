@@ -1,0 +1,8 @@
+node_modules/
+*.vsix
+dist/
+.tmp/
+.vscode-test-web/
+
+# Local Netlify folder
+.netlify

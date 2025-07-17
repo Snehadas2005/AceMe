@@ -30,22 +30,19 @@ const upload = multer({
       cb(new Error('Only PDF, DOC, and DOCX files are allowed'));
     }
   },
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+  limits: { fileSize: 5 * 1024 * 1024 } 
 });
 
-// Register new user
 router.post('/register', validateSignup, async (req, res) => {
   try {
     const { email, password, fullName } = req.body;
 
-    // Create user in Firebase Auth
     const userRecord = await auth.createUser({
       email,
       password,
       displayName: fullName
     });
 
-    // Create user document in Firestore
     await db.collection('users').doc(userRecord.uid).set({
       uid: userRecord.uid,
       email,
@@ -71,16 +68,13 @@ router.post('/register', validateSignup, async (req, res) => {
   }
 });
 
-// Login user
 router.post('/login', validateLogin, async (req, res) => {
   try {
     const { idToken } = req.body;
 
-    // Verify Firebase ID token
     const decodedToken = await auth.verifyIdToken(idToken);
     const uid = decodedToken.uid;
 
-    // Get user data from Firestore
     const userDoc = await db.collection('users').doc(uid).get();
     
     if (!userDoc.exists) {
@@ -105,7 +99,6 @@ router.post('/login', validateLogin, async (req, res) => {
   }
 });
 
-// Upload resume
 router.post('/upload-resume', upload.single('resume'), async (req, res) => {
   try {
     if (!req.file) {
@@ -118,10 +111,8 @@ router.post('/upload-resume', upload.single('resume'), async (req, res) => {
     const { uid } = req.body;
     const resumePath = req.file.path;
 
-    // Parse resume
     const resumeData = await parseResume(resumePath);
 
-    // Update user profile with resume data
     await db.collection('users').doc(uid).update({
       resume: {
         fileName: req.file.filename,
