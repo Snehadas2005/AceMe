@@ -1,96 +1,112 @@
-const fs = require('fs');
-const path = require('path');
-const { v4: uuidv4 } = require('uuid');
+const axios = require('axios');
+const FormData = require('form-data');
 
-// For speech-to-text, we'll use a mock implementation
-// In production, integrate with Google Speech-to-Text, Azure Speech, or AWS Transcribe
-const speechToText = async (audioBuffer, format = 'webm') => {
+const processAudioResponse = async (audioFile) => {
   try {
-    // Save audio file temporarily
-    const audioId = uuidv4();
-    const audioPath = path.join(__dirname, '../uploads/audio', `${audioId}.${format}`);
+    // Option 1: Using Web Speech API (Browser-based)
+    // This would be handled on the frontend and sent as text
     
-    // Ensure directory exists
-    const audioDir = path.dirname(audioPath);
-    if (!fs.existsSync(audioDir)) {
-      fs.mkdirSync(audioDir, { recursive: true });
+    // Option 2: Using Google Speech-to-Text API
+    if (process.env.GOOGLE_SPEECH_API_KEY) {
+      return await processWithGoogleSpeech(audioFile);
     }
     
-    // Save audio buffer to file
-    fs.writeFileSync(audioPath, audioBuffer);
+    // Option 3: Using OpenAI Whisper API
+    if (process.env.OPENAI_API_KEY) {
+      return await processWithWhisper(audioFile);
+    }
     
-    // Mock transcription - replace with actual speech-to-text service
-    const transcription = await mockSpeechToText(audioPath);
-    
-    // Clean up temporary file
-    fs.unlinkSync(audioPath);
-    
-    return {
-      success: true,
-      transcription,
-      audioId,
-      duration: await getAudioDuration(audioBuffer)
-    };
+    // Fallback: Mock implementation for development
+    return await mockAudioProcessing(audioFile);
     
   } catch (error) {
-    return {
-      success: false,
-      error: error.message
-    };
+    console.error('Audio processing error:', error);
+    throw new Error('Failed to process audio');
   }
 };
 
-// Mock speech-to-text function
-// Replace this with actual implementation using Google Cloud Speech-to-Text API
-const mockSpeechToText = async (audioPath) => {
-  // This is a mock implementation
-  // In production, use Google Speech-to-Text API:
-  /*
-  const speech = require('@google-cloud/speech');
-  const client = new speech.SpeechClient();
-  
-  const audio = {
-    content: fs.readFileSync(audioPath).toString('base64'),
-  };
-  
-  const config = {
-    encoding: 'WEBM_OPUS',
-    sampleRateHertz: 16000,
-    languageCode: 'en-US',
-  };
-  
-  const request = {
-    audio: audio,
-    config: config,
-  };
-  
-  const [response] = await client.recognize(request);
-  return response.results
-    .map(result => result.alternatives[0].transcript)
-    .join('\n');
-  */
-  
-  // Mock response for development
-  return "This is a mock transcription. In production, this would be the actual speech-to-text result.";
+const processWithGoogleSpeech = async (audioFile) => {
+  try {
+    const formData = new FormData();
+    formData.append('audio', audioFile.buffer, {
+      filename: 'audio.wav',
+      contentType: audioFile.mimetype
+    });
+    
+    const response = await axios.post(
+      `https://speech.googleapis.com/v1/speech:recognize?key=${process.env.GOOGLE_SPEECH_API_KEY}`,
+      {
+        config: {
+          encoding: 'WEBM_OPUS',
+          sampleRateHertz: 16000,
+          languageCode: 'en-US',
+        },
+        audio: {
+          content: audioFile.buffer.toString('base64')
+        }
+      }
+    );
+    
+    return response.data.results[0]?.alternatives[0]?.transcript || '';
+  } catch (error) {
+    console.error('Google Speech API error:', error);
+    throw error;
+  }
 };
 
-const getAudioDuration = async (audioBuffer) => {
-  // Mock duration calculation
-  // In production, use a library like node-ffmpeg to get actual duration
-  return Math.floor(audioBuffer.length / 1000); // Mock duration in seconds
+const processWithWhisper = async (audioFile) => {
+  try {
+    const formData = new FormData();
+    formData.append('file', audioFile.buffer, {
+      filename: 'audio.wav',
+      contentType: audioFile.mimetype
+    });
+    formData.append('model', 'whisper-1');
+    
+    const response = await axios.post(
+      'https://api.openai.com/v1/audio/transcriptions',
+      formData,
+      {
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          ...formData.getHeaders()
+        }
+      }
+    );
+    
+    return response.data.text;
+  } catch (error) {
+    console.error('Whisper API error:', error);
+    throw error;
+  }
 };
 
-// Analyze audio quality metrics
-const analyzeAudioQuality = (audioBuffer) => {
+const mockAudioProcessing = async (audioFile) => {
+  // Mock implementation for development
+  const mockResponses = [
+    "I have three years of experience in software development, primarily working with JavaScript and React. In my previous role, I led a team of four developers and successfully delivered multiple projects on time.",
+    "My greatest strength is problem-solving. I enjoy breaking down complex issues into manageable parts and finding efficient solutions. I'm also very collaborative and work well in team environments.",
+    "I'm passionate about continuous learning and staying updated with the latest technologies. I believe this position would allow me to grow my skills while contributing to meaningful projects.",
+    "In my previous role, I faced a challenging deadline where we had to deliver a critical feature. I organized daily standups, broke down tasks efficiently, and we delivered the project two days ahead of schedule."
+  ];
+  
+  // Simulate processing delay
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  return mockResponses[Math.floor(Math.random() * mockResponses.length)];
+};
+
+const analyzeAudioMetrics = (audioFile) => {
+  // Mock audio analysis for development
   return {
-    volume: Math.random() * 100, // Mock volume level
-    clarity: Math.random() * 100, // Mock clarity score
-    pace: Math.random() * 100, // Mock speaking pace
-    pauseFrequency: Math.random() * 10 // Mock pause frequency
+    duration: Math.random() * 60 + 30, // 30-90 seconds
+    volume: Math.random() * 0.5 + 0.5, // 0.5-1.0
+    pace: Math.random() * 0.4 + 0.8, // 0.8-1.2 (words per second)
+    clarity: Math.random() * 0.3 + 0.7 // 0.7-1.0
   };
 };
 
 module.exports = {
-  speechToText,
-  analyzeAudioQuality
+  processAudioResponse,
+  analyzeAudioMetrics
 };
