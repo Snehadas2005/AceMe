@@ -1,46 +1,56 @@
 const express = require('express');
 const cors = require('cors');
-const dotenv = require('dotenv');
-const path = require('path');
+const multer = require('multer');
+require('dotenv').config();
 
-dotenv.config();
-
+// Import routes
 const authRoutes = require('./routes/auth');
 const interviewRoutes = require('./routes/interview');
-const questionRoutes = require('./routes/questions');
 const analysisRoutes = require('./routes/analysis');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// Middleware
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true
+}));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
+// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/interview', interviewRoutes);
-app.use('/api/questions', questionRoutes);
 app.use('/api/analysis', analysisRoutes);
 
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    timestamp: new Date().toISOString(),
-    message: 'Interview Backend API is running' 
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Server is running',
+    timestamp: new Date()
   });
 });
 
-app.use((err, req, res, next) => {
-  console.error(err.stack);
+// Error handling middleware
+app.use((error, req, res, next) => {
+  if (error instanceof multer.MulterError) {
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({
+        success: false,
+        message: 'File too large. Maximum size is 10MB'
+      });
+    }
+  }
+  
   res.status(500).json({
     success: false,
-    message: 'Something went wrong!',
-    error: process.env.NODE_ENV === 'development' ? err.message : {}
+    message: 'Internal server error'
   });
 });
 
+// 404 handler
 app.use('*', (req, res) => {
   res.status(404).json({
     success: false,
@@ -49,6 +59,5 @@ app.use('*', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV}`);
+  console.log(`Server running on port ${PORT}`);
 });
