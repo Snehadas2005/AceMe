@@ -1,296 +1,266 @@
-const generateDetailedReport = async (interview) => {
-  try {
-    const report = {
-      interviewId: interview.interviewId,
-      userId: interview.userId,
-      completedAt: new Date(),
-      duration: calculateDuration(interview.startTime, interview.endTime),
-      
-      // Overall scores
-      overallScore: calculateOverallScore(interview.responses),
-      categoryScores: calculateCategoryScores(interview.responses),
-      
-      // Detailed analysis
-      strengths: identifyStrengths(interview.responses),
-      areasForImprovement: identifyWeaknesses(interview.responses),
-      
-      // Question-by-question breakdown
-      questionAnalysis: generateQuestionAnalysis(interview.questions, interview.responses),
-      
-      // Recommendations
-      recommendations: generateRecommendations(interview.responses),
-      
-      // Performance metrics
-      metrics: calculatePerformanceMetrics(interview.responses),
-      
-      // Comparative analysis
-      benchmarking: await generateBenchmarking(interview.responses)
-    };
-    
-    return report;
-  } catch (error) {
-    console.error('Report generation error:', error);
-    throw error;
+const { adminDB } = require('../config/firebase');
+const audioProcessor = require('./audioProcessor');
+const nlpAnalyzer = require('./nlpAnalyzer');
+
+class ReportGenerator {
+  async generateReport(interviewData) {
+    try {
+      const {
+        userId,
+        interviewId,
+        questions,
+        answers,
+        resumeData,
+        duration,
+        audioAnalysis
+      } = interviewData;
+
+      // Analyze each answer
+      const answerAnalyses = await Promise.all(
+        answers.map(async (answer, index) => {
+          return await this.analyzeAnswer(
+            answer,
+            questions[index],
+            resumeData,
+            audioAnalysis[index]
+          );
+        })
+      );
+
+      // Calculate overall scores
+      const overallScores = this.calculateOverallScores(answerAnalyses);
+
+      // Generate detailed feedback
+      const feedback = this.generateFeedback(overallScores, answerAnalyses);
+
+      // Create report object
+      const report = {
+        userId,
+        interviewId,
+        timestamp: new Date(),
+        duration,
+        scores: overallScores,
+        answerAnalyses,
+        feedback,
+        recommendations: this.generateRecommendations(overallScores),
+        summary: this.generateSummary(overallScores, answerAnalyses)
+      };
+
+      // Save report to database
+      await adminDB.collection('reports').doc(interviewId).set(report);
+
+      return report;
+    } catch (error) {
+      console.error('Report generation error:', error);
+      throw error;
+    }
   }
-};
 
-const calculateDuration = (startTime, endTime) => {
-  const start = startTime.toDate ? startTime.toDate() : new Date(startTime);
-  const end = endTime.toDate ? endTime.toDate() : new Date(endTime);
-  return Math.round((end - start) / 1000 / 60); // Duration in minutes
-};
-
-const calculateOverallScore = (responses) => {
-  if (!responses || responses.length === 0) return 0;
-  
-  const totalScore = responses.reduce((sum, response) => {
-    return sum + (response.analysis?.overallScore || 0);
-  }, 0);
-  
-  return Math.round(totalScore / responses.length);
-};
-
-const calculateCategoryScores = (responses) => {
-  const categories = {
-    communicationSkills: 0,
-    confidence: 0,
-    grammarFluency: 0,
-    subjectKnowledge: 0,
-    workQualities: 0
-  };
-  
-  if (!responses || responses.length === 0) return categories;
-  
-  responses.forEach(response => {
-    if (response.analysis) {
-      Object.keys(categories).forEach(category => {
-        if (response.analysis[category]) {
-          categories[category] += response.analysis[category].score || 0;
-        }
-      });
-    }
-  });
-  
-  // Calculate averages
-  Object.keys(categories).forEach(category => {
-    categories[category] = Math.round(categories[category] / responses.length);
-  });
-  
-  return categories;
-};
-
-const identifyStrengths = (responses) => {
-  const strengths = [];
-  const categoryScores = calculateCategoryScores(responses);
-  
-  Object.entries(categoryScores).forEach(([category, score]) => {
-    if (score >= 80) {
-      strengths.push({
-        category: formatCategoryName(category),
-        score,
-        description: getStrengthDescription(category, score)
-      });
-    }
-  });
-  
-  return strengths;
-};
-
-const identifyWeaknesses = (responses) => {
-  const weaknesses = [];
-  const categoryScores = calculateCategoryScores(responses);
-  
-  Object.entries(categoryScores).forEach(([category, score]) => {
-    if (score < 60) {
-      weaknesses.push({
-        category: formatCategoryName(category),
-        score,
-        description: getWeaknessDescription(category, score),
-        suggestions: getImprovementSuggestions(category)
-      });
-    }
-  });
-  
-  return weaknesses;
-};
-
-const generateQuestionAnalysis = (questions, responses) => {
-  return questions.map((question, index) => {
-    const response = responses[index];
+  async analyzeAnswer(answer, question, resumeData, audioData) {
+    const transcript = answer.transcript || answer.text;
     
+    // Communication analysis
+    const fillerAnalysis = audioProcessor.analyzeFillerWords(transcript);
+    const grammarAnalysis = nlpAnalyzer.analyzeGrammar(transcript);
+    
+    // Confidence analysis
+    const sentimentAnalysis = nlpAnalyzer.analyzeSentiment(transcript);
+    const confidenceLevel = nlpAnalyzer.calculateConfidenceLevel(transcript);
+    
+    // Subject knowledge analysis
+    const subjectAnalysis = nlpAnalyzer.analyzeSubjectKnowledge(
+      transcript,
+      resumeData.keywords || [],
+      question.domain || 'general'
+    );
+    
+    // Professionalism analysis
+    const professionalismScore = nlpAnalyzer.analyzeProfessionalism(transcript);
+    
+    // Speech pace analysis
+    const paceAnalysis = audioProcessor.analyzeSpeechPace(
+      transcript.split(/\s+/),
+      audioData.duration || 30
+    );
+
     return {
-      questionNumber: index + 1,
-      question: question.question,
-      type: question.type,
-      difficulty: question.difficulty,
-      userResponse: response ? response.transcript : 'No response',
-      analysis: response ? response.analysis : null,
-      score: response ? response.analysis?.overallScore : 0,
-      timeSpent: response ? calculateResponseTime(response) : 0
-    };
-  });
-};
-
-const generateRecommendations = (responses) => {
-  const recommendations = [];
-  const categoryScores = calculateCategoryScores(responses);
-  
-  // General recommendations based on performance
-  if (categoryScores.communicationSkills < 70) {
-    recommendations.push({
-      category: 'Communication',
-      priority: 'High',
-      suggestion: 'Practice speaking clearly and concisely. Record yourself and listen for filler words.',
-      resources: ['Toastmasters International', 'Public speaking courses']
-    });
-  }
-  
-  if (categoryScores.confidence < 70) {
-    recommendations.push({
-      category: 'Confidence',
-      priority: 'High',
-      suggestion: 'Practice positive self-talk and prepare strong examples of your achievements.',
-      resources: ['Mock interviews', 'Confidence building workshops']
-    });
-  }
-  
-  if (categoryScores.subjectKnowledge < 70) {
-    recommendations.push({
-      category: 'Technical Knowledge',
-      priority: 'Medium',
-      suggestion: 'Review key concepts in your field and practice explaining them simply.',
-      resources: ['Online courses', 'Technical documentation', 'Industry blogs']
-    });
-  }
-  
-  return recommendations;
-};
-
-const calculatePerformanceMetrics = (responses) => {
-  const metrics = {
-    averageResponseTime: 0,
-    totalWords: 0,
-    averageWordsPerResponse: 0,
-    fillerWordFrequency: 0,
-    technicalTermsUsed: 0,
-    confidenceLevel: 0
-  };
-  
-  if (!responses || responses.length === 0) return metrics;
-  
-  let totalTime = 0;
-  let totalWords = 0;
-  let totalFillerWords = 0;
-  let totalTechnicalTerms = 0;
-  let totalConfidence = 0;
-  
-  responses.forEach(response => {
-    if (response.transcript) {
-      const words = response.transcript.split(/\s+/).length;
-      totalWords += words;
-      
-      if (response.analysis) {
-        totalFillerWords += response.analysis.communicationSkills?.fillerWordsCount || 0;
-        totalTechnicalTerms += response.analysis.subjectKnowledge?.technicalTermsUsed?.length || 0;
-        totalConfidence += response.analysis.confidence?.score || 0;
+      questionId: question.id,
+      questionText: question.text,
+      answerText: transcript,
+      scores: {
+        communication: this.calculateCommunicationScore(fillerAnalysis, grammarAnalysis, paceAnalysis),
+        confidence: this.calculateConfidenceScore(sentimentAnalysis, confidenceLevel),
+        grammar: grammarAnalysis.grammarScore,
+        subjectKnowledge: subjectAnalysis.overallScore,
+        professionalism: professionalismScore
+      },
+      details: {
+        fillerAnalysis,
+        grammarAnalysis,
+        sentimentAnalysis,
+        subjectAnalysis,
+        paceAnalysis,
+        confidenceLevel,
+        professionalismScore
       }
+    };
+  }
+
+  calculateCommunicationScore(fillerAnalysis, grammarAnalysis, paceAnalysis) {
+    return (
+      fillerAnalysis.score * 0.3 +
+      grammarAnalysis.structureScore * 0.3 +
+      paceAnalysis.score * 0.2 +
+      grammarAnalysis.vocabularyScore * 0.2
+    );
+  }
+
+  calculateConfidenceScore(sentimentAnalysis, confidenceLevel) {
+    return (
+      sentimentAnalysis.score * 0.4 +
+      confidenceLevel * 0.6
+    );
+  }
+
+  calculateOverallScores(answerAnalyses) {
+    const categories = [
+      'communication',
+      'confidence', 
+      'grammar',
+      'subjectKnowledge',
+      'professionalism'
+    ];
+
+    const scores = {};
+    
+    categories.forEach(category => {
+      const categoryScores = answerAnalyses.map(analysis => analysis.scores[category]);
+      scores[category] = categoryScores.reduce((sum, score) => sum + score, 0) / categoryScores.length;
+    });
+
+    // Calculate overall score
+    scores.overall = (
+      scores.communication * 0.25 +
+      scores.confidence * 0.20 +
+      scores.grammar * 0.15 +
+      scores.subjectKnowledge * 0.30 +
+      scores.professionalism * 0.10
+    );
+
+    return scores;
+  }
+
+  generateFeedback(overallScores, answerAnalyses) {
+    const feedback = {
+      strengths: [],
+      improvements: [],
+      specific: []
+    };
+
+    // Identify strengths
+    Object.entries(overallScores).forEach(([category, score]) => {
+      if (score >= 80) {
+        feedback.strengths.push(this.getStrengthFeedback(category, score));
+      } else if (score < 60) {
+        feedback.improvements.push(this.getImprovementFeedback(category, score));
+      }
+    });
+
+    // Specific feedback from individual answers
+    answerAnalyses.forEach((analysis, index) => {
+      if (analysis.details.fillerAnalysis.fillerCount > 5) {
+        feedback.specific.push(`Question ${index + 1}: Reduce filler words (${analysis.details.fillerAnalysis.fillerCount} detected)`);
+      }
+      
+      if (analysis.details.paceAnalysis.feedback !== 'good_pace') {
+        feedback.specific.push(`Question ${index + 1}: Adjust speaking pace (${analysis.details.paceAnalysis.wpm} WPM)`);
+      }
+    });
+
+    return feedback;
+  }
+
+  getStrengthFeedback(category, score) {
+    const feedbackMap = {
+      communication: 'Excellent communication skills with clear and concise answers',
+      confidence: 'Strong confidence levels with positive and assertive responses',
+      grammar: 'Very good grammar and sentence structure',
+      subjectKnowledge: 'Demonstrates strong subject matter expertise',
+      professionalism: 'Maintains professional tone throughout the interview'
+    };
+
+    return feedbackMap[category] || `Strong performance in ${category}`;
+  }
+
+  getImprovementFeedback(category, score) {
+    const feedbackMap = {
+      communication: 'Work on clarity and reducing filler words in responses',
+      confidence: 'Practice speaking with more conviction and positive language',
+      grammar: 'Review grammar rules and sentence construction',
+      subjectKnowledge: 'Strengthen domain knowledge and use more technical terms',
+      professionalism: 'Use more formal language and professional terminology'
+    };
+
+    return feedbackMap[category] || `Improvement needed in ${category}`;
+  }
+
+  generateRecommendations(overallScores) {
+    const recommendations = [];
+
+    if (overallScores.communication < 70) {
+      recommendations.push({
+        category: 'Communication',
+        priority: 'High',
+        action: 'Practice speaking exercises and record yourself to identify areas for improvement'
+      });
     }
-  });
-  
-  metrics.totalWords = totalWords;
-  metrics.averageWordsPerResponse = Math.round(totalWords / responses.length);
-  metrics.fillerWordFrequency = Math.round((totalFillerWords / totalWords) * 100);
-  metrics.technicalTermsUsed = totalTechnicalTerms;
-  metrics.confidenceLevel = Math.round(totalConfidence / responses.length);
-  
-  return metrics;
-};
 
-const generateBenchmarking = async (responses) => {
-  // In a real application, you would compare against a database of other interviews
-  // For now, we'll provide mock benchmarking data
-  
-  const userScore = calculateOverallScore(responses);
-  
-  return {
-    percentile: Math.min(95, Math.max(5, userScore + Math.random() * 10 - 5)),
-    averageScore: 72,
-    topPerformerScore: 95,
-    yourScore: userScore,
-    comparison: userScore > 72 ? 'Above Average' : userScore > 60 ? 'Average' : 'Below Average'
-  };
-};
+    if (overallScores.confidence < 70) {
+      recommendations.push({
+        category: 'Confidence',
+        priority: 'High',
+        action: 'Practice positive self-talk and prepare strong examples from your experience'
+      });
+    }
 
-// Helper functions
-const formatCategoryName = (category) => {
-  return category.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-};
+    if (overallScores.subjectKnowledge < 70) {
+      recommendations.push({
+        category: 'Subject Knowledge',
+        priority: 'Medium',
+        action: 'Review technical concepts and practice explaining them in simple terms'
+      });
+    }
 
-const getStrengthDescription = (category, score) => {
-  const descriptions = {
-    communicationSkills: 'Excellent verbal communication with clear articulation and minimal filler words.',
-    confidence: 'Strong self-assurance and positive attitude throughout the interview.',
-    grammarFluency: 'Excellent grammar and smooth, fluent speech patterns.',
-    subjectKnowledge: 'Deep understanding of technical concepts and industry knowledge.',
-    workQualities: 'Strong professional qualities including teamwork and problem-solving skills.'
-  };
-  
-  return descriptions[category] || 'Strong performance in this area.';
-};
+    return recommendations;
+  }
 
-const getWeaknessDescription = (category, score) => {
-  const descriptions = {
-    communicationSkills: 'Room for improvement in clarity and reducing filler words.',
-    confidence: 'Could benefit from more assertive and positive communication.',
-    grammarFluency: 'Some areas for improvement in grammar and speech fluency.',
-    subjectKnowledge: 'Consider strengthening technical knowledge and industry awareness.',
-    workQualities: 'Could better demonstrate professional qualities and soft skills.'
-  };
-  
-  return descriptions[category] || 'This area needs attention.';
-};
+  generateSummary(overallScores, answerAnalyses) {
+    const totalQuestions = answerAnalyses.length;
+    const averageScore = overallScores.overall;
+    
+    let performance = 'Excellent';
+    if (averageScore < 80) performance = 'Good';
+    if (averageScore < 70) performance = 'Average';
+    if (averageScore < 60) performance = 'Needs Improvement';
 
-const getImprovementSuggestions = (category) => {
-  const suggestions = {
-    communicationSkills: [
-      'Practice speaking without filler words',
-      'Record yourself and listen for areas of improvement',
-      'Join public speaking groups'
-    ],
-    confidence: [
-      'Prepare strong examples of your achievements',
-      'Practice positive self-talk',
-      'Mock interview practice'
-    ],
-    grammarFluency: [
-      'Read more to improve vocabulary',
-      'Practice speaking exercises',
-      'Use grammar checking tools'
-    ],
-    subjectKnowledge: [
-      'Review key concepts in your field',
-      'Stay updated with industry trends',
-      'Practice explaining complex topics simply'
-    ],
-    workQualities: [
-      'Prepare STAR method examples',
-      'Practice behavioral questions',
-      'Reflect on teamwork experiences'
-    ]
-  };
-  
-  return suggestions[category] || ['Continue practicing and seeking feedback'];
-};
+    return {
+      performance,
+      totalQuestions,
+      averageScore: Math.round(averageScore),
+      topCategory: this.getTopCategory(overallScores),
+      improvementArea: this.getWeakestCategory(overallScores)
+    };
+  }
 
-const calculateResponseTime = (response) => {
-  // Mock calculation - in real app, you'd track actual time
-  return Math.random() * 60 + 30; // 30-90 seconds
-};
+  getTopCategory(scores) {
+    const categories = ['communication', 'confidence', 'grammar', 'subjectKnowledge', 'professionalism'];
+    return categories.reduce((a, b) => scores[a] > scores[b] ? a : b);
+  }
 
-module.exports = {
-  generateDetailedReport,
-  calculateOverallScore,
-  calculateCategoryScores,
-  identifyStrengths,
-  identifyWeaknesses
-};
+  getWeakestCategory(scores) {
+    const categories = ['communication', 'confidence', 'grammar', 'subjectKnowledge', 'professionalism'];
+    return categories.reduce((a, b) => scores[a] < scores[b] ? a : b);
+  }
+}
+
+module.exports = new ReportGenerator();

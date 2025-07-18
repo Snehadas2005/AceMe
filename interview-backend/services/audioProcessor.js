@@ -1,112 +1,117 @@
-const axios = require('axios');
-const FormData = require('form-data');
+const speech = require('@google-cloud/speech');
+const fs = require('fs');
+const path = require('path');
 
-const processAudioResponse = async (audioFile) => {
-  try {
-    // Option 1: Using Web Speech API (Browser-based)
-    // This would be handled on the frontend and sent as text
-    
-    // Option 2: Using Google Speech-to-Text API
-    if (process.env.GOOGLE_SPEECH_API_KEY) {
-      return await processWithGoogleSpeech(audioFile);
-    }
-    
-    // Option 3: Using OpenAI Whisper API
-    if (process.env.OPENAI_API_KEY) {
-      return await processWithWhisper(audioFile);
-    }
-    
-    // Fallback: Mock implementation for development
-    return await mockAudioProcessing(audioFile);
-    
-  } catch (error) {
-    console.error('Audio processing error:', error);
-    throw new Error('Failed to process audio');
+class AudioProcessor {
+  constructor() {
+    this.client = new speech.SpeechClient();
+    this.streamingConfig = {
+      config: {
+        encoding: 'WEBM_OPUS',
+        sampleRateHertz: 48000,
+        languageCode: 'en-US',
+        enableAutomaticPunctuation: true,
+        enableWordTimeOffsets: true,
+        model: 'latest_long'
+      },
+      interimResults: true,
+      singleUtterance: false
+    };
   }
-};
 
-const processWithGoogleSpeech = async (audioFile) => {
-  try {
-    const formData = new FormData();
-    formData.append('audio', audioFile.buffer, {
-      filename: 'audio.wav',
-      contentType: audioFile.mimetype
+  async processAudioStream(audioStream) {
+    return new Promise((resolve, reject) => {
+      const recognizeStream = this.client
+        .streamingRecognize(this.streamingConfig)
+        .on('error', reject)
+        .on('data', (data) => {
+          const result = data.results[0];
+          if (result && result.isFinal) {
+            resolve({
+              transcript: result.alternatives[0].transcript,
+              confidence: result.alternatives[0].confidence,
+              words: result.alternatives[0].words || []
+            });
+          }
+        });
+
+      audioStream.pipe(recognizeStream);
     });
-    
-    const response = await axios.post(
-      `https://speech.googleapis.com/v1/speech:recognize?key=${process.env.GOOGLE_SPEECH_API_KEY}`,
-      {
-        config: {
-          encoding: 'WEBM_OPUS',
-          sampleRateHertz: 16000,
-          languageCode: 'en-US',
-        },
-        audio: {
-          content: audioFile.buffer.toString('base64')
-        }
-      }
-    );
-    
-    return response.data.results[0]?.alternatives[0]?.transcript || '';
-  } catch (error) {
-    console.error('Google Speech API error:', error);
-    throw error;
   }
-};
 
-const processWithWhisper = async (audioFile) => {
-  try {
-    const formData = new FormData();
-    formData.append('file', audioFile.buffer, {
-      filename: 'audio.wav',
-      contentType: audioFile.mimetype
+  async convertAudioToText(audioBuffer) {
+    try {
+      const tempFilePath = path.join(__dirname, '../temp', `audio_${Date.now()}.webm`);
+      fs.writeFileSync(tempFilePath, audioBuffer);
+
+      const audio = {
+        content: fs.readFileSync(tempFilePath).toString('base64'),
+      };
+
+      const config = {
+        encoding: 'WEBM_OPUS',
+        sampleRateHertz: 48000,
+        languageCode: 'en-US',
+        enableAutomaticPunctuation: true,
+        enableWordTimeOffsets: true,
+      };
+
+      const request = {
+        audio: audio,
+        config: config,
+      };
+
+      const [response] = await this.client.recognize(request);
+      const transcription = response.results
+        .map(result => result.alternatives[0].transcript)
+        .join('\n');
+
+      // Clean up temp file
+      fs.unlinkSync(tempFilePath);
+
+      return {
+        transcript: transcription,
+        confidence: response.results[0]?.alternatives[0]?.confidence || 0,
+        words: response.results[0]?.alternatives[0]?.words || []
+      };
+    } catch (error) {
+      console.error('Audio processing error:', error);
+      throw error;
+    }
+  }
+
+  analyzeFillerWords(transcript) {
+    const fillerWords = ['um', 'uh', 'like', 'you know', 'so', 'actually', 'basically', 'literally'];
+    const words = transcript.toLowerCase().split(/\s+/);
+    const totalWords = words.length;
+    
+    let fillerCount = 0;
+    fillerWords.forEach(filler => {
+      const regex = new RegExp(`\\b${filler}\\b`, 'gi');
+      const matches = transcript.match(regex);
+      if (matches) fillerCount += matches.length;
     });
-    formData.append('model', 'whisper-1');
-    
-    const response = await axios.post(
-      'https://api.openai.com/v1/audio/transcriptions',
-      formData,
-      {
-        headers: {
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-          ...formData.getHeaders()
-        }
-      }
-    );
-    
-    return response.data.text;
-  } catch (error) {
-    console.error('Whisper API error:', error);
-    throw error;
+
+    return {
+      totalWords,
+      fillerCount,
+      fillerPercentage: (fillerCount / totalWords) * 100,
+      score: Math.max(0, 100 - (fillerCount / totalWords) * 200)
+    };
   }
-};
 
-const mockAudioProcessing = async (audioFile) => {
-  // Mock implementation for development
-  const mockResponses = [
-    "I have three years of experience in software development, primarily working with JavaScript and React. In my previous role, I led a team of four developers and successfully delivered multiple projects on time.",
-    "My greatest strength is problem-solving. I enjoy breaking down complex issues into manageable parts and finding efficient solutions. I'm also very collaborative and work well in team environments.",
-    "I'm passionate about continuous learning and staying updated with the latest technologies. I believe this position would allow me to grow my skills while contributing to meaningful projects.",
-    "In my previous role, I faced a challenging deadline where we had to deliver a critical feature. I organized daily standups, broke down tasks efficiently, and we delivered the project two days ahead of schedule."
-  ];
-  
-  // Simulate processing delay
-  await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  return mockResponses[Math.floor(Math.random() * mockResponses.length)];
-};
+  analyzeSpeechPace(words, duration) {
+    const wordsPerMinute = (words.length / duration) * 60;
+    const idealWPM = 150; // Ideal speaking pace
+    const deviation = Math.abs(wordsPerMinute - idealWPM);
+    
+    return {
+      wpm: wordsPerMinute,
+      score: Math.max(0, 100 - (deviation / idealWPM) * 100),
+      feedback: wordsPerMinute < 120 ? 'too_slow' : 
+                wordsPerMinute > 180 ? 'too_fast' : 'good_pace'
+    };
+  }
+}
 
-const analyzeAudioMetrics = (audioFile) => {
-  // Mock audio analysis for development
-  return {
-    duration: Math.random() * 60 + 30, // 30-90 seconds
-    volume: Math.random() * 0.5 + 0.5, // 0.5-1.0
-    pace: Math.random() * 0.4 + 0.8, // 0.8-1.2 (words per second)
-    clarity: Math.random() * 0.3 + 0.7 // 0.7-1.0
-  };
-};
-
-module.exports = {
-  processAudioResponse,
-  analyzeAudioMetrics
-};
+module.exports = new AudioProcessor();
