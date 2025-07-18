@@ -1,235 +1,155 @@
 const express = require('express');
-const multer = require('multer');
-const { db } = require('../config/firebase');
-const { generateQuestions } = require('../services/questionGenerator');
-const { processAudioResponse } = require('../services/audioProcessor');
-const { analyzeResponse } = require('../services/nlpAnalyzer');
 const { authenticateToken } = require('../middleware/auth');
+const { adminDB } = require('../config/firebase');
+const questionGenerator = require('../services/questionGenerator');
+const reportGenerator = require('../services/reportGenerator');
 const router = express.Router();
 
-// Configure multer for audio uploads
-const storage = multer.memoryStorage();
-const upload = multer({ 
-  storage: storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('audio/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only audio files are allowed'), false);
-    }
-  }
-});
-
-// Start new interview
+// Start interview
 router.post('/start', authenticateToken, async (req, res) => {
   try {
     const { uid } = req.user;
     const { resumeId } = req.body;
 
-    // Get user's resume
-    const resumeDoc = await db.collection('resumes').doc(resumeId).get();
+    // Get user's resume data
+    const resumeDoc = await adminDB.collection('resumes').doc(resumeId).get();
     if (!resumeDoc.exists) {
-      return res.status(404).json({
-        success: false,
-        message: 'Resume not found'
-      });
+      return res.status(404).json({ success: false, message: 'Resume not found' });
     }
 
-    const resume = resumeDoc.data();
+    const resumeData = resumeDoc.data();
     
     // Generate questions based on resume
-    const questions = await generateQuestions(resume);
+    const questions = await questionGenerator.generateQuestions(resumeData);
     
     // Create interview session
-    const interviewId = `interview_${Date.now()}_${uid}`;
     const interviewData = {
-      interviewId,
       userId: uid,
       resumeId,
       questions,
-      responses: [],
-      currentQuestionIndex: 0,
-      status: 'active',
       startTime: new Date(),
-      endTime: null,
-      analysis: {}
+      status: 'active',
+      duration: 30 * 60 * 1000 // 30 minutes in milliseconds
     };
 
-    await db.collection('interviews').doc(interviewId).set(interviewData);
+    const interviewRef = await adminDB.collection('interviews').add(interviewData);
 
     res.json({
       success: true,
-      interviewId,
-      firstQuestion: questions[0],
-      totalQuestions: questions.length
+      interviewId: interviewRef.id,
+      questions,
+      duration: interviewData.duration
     });
+
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
-});
-
-// Get current question
-router.get('/:interviewId/question', authenticateToken, async (req, res) => {
-  try {
-    const { interviewId } = req.params;
-    
-    const interviewDoc = await db.collection('interviews').doc(interviewId).get();
-    if (!interviewDoc.exists) {
-      return res.status(404).json({
-        success: false,
-        message: 'Interview not found'
-      });
-    }
-
-    const interview = interviewDoc.data();
-    const currentQuestion = interview.questions[interview.currentQuestionIndex];
-    
-    res.json({
-      success: true,
-      question: currentQuestion,
-      questionNumber: interview.currentQuestionIndex + 1,
-      totalQuestions: interview.questions.length,
-      timeRemaining: getTimeRemaining(interview.startTime)
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
-});
-
-// Submit audio response
-router.post('/:interviewId/response', authenticateToken, upload.single('audio'), async (req, res) => {
-  try {
-    const { interviewId } = req.params;
-    const audioFile = req.file;
-    
-    if (!audioFile) {
-      return res.status(400).json({
-        success: false,
-        message: 'Audio file is required'
-      });
-    }
-
-    // Process audio to text
-    const transcript = await processAudioResponse(audioFile);
-    
-    // Get current interview state
-    const interviewDoc = await db.collection('interviews').doc(interviewId).get();
-    const interview = interviewDoc.data();
-    
-    // Analyze the response
-    const currentQuestion = interview.questions[interview.currentQuestionIndex];
-    const analysis = await analyzeResponse(transcript, currentQuestion, interview.resumeId);
-    
-    // Save response
-    const response = {
-      questionIndex: interview.currentQuestionIndex,
-      question: currentQuestion.question,
-      transcript,
-      analysis,
-      timestamp: new Date(),
-      audioProcessingTime: new Date() - new Date()
-    };
-
-    // Update interview with response
-    const updatedResponses = [...interview.responses, response];
-    const nextQuestionIndex = interview.currentQuestionIndex + 1;
-    
-    let updateData = {
-      responses: updatedResponses,
-      currentQuestionIndex: nextQuestionIndex
-    };
-
-    // Check if interview is complete
-    if (nextQuestionIndex >= interview.questions.length) {
-      updateData.status = 'completed';
-      updateData.endTime = new Date();
-    }
-
-    await db.collection('interviews').doc(interviewId).update(updateData);
-
-    res.json({
-      success: true,
-      transcript,
-      analysis,
-      isCompleted: nextQuestionIndex >= interview.questions.length,
-      nextQuestion: nextQuestionIndex < interview.questions.length ? 
-        interview.questions[nextQuestionIndex] : null
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
-  }
-});
-
-// End interview manually
-router.post('/:interviewId/end', authenticateToken, async (req, res) => {
-  try {
-    const { interviewId } = req.params;
-    
-    await db.collection('interviews').doc(interviewId).update({
-      status: 'completed',
-      endTime: new Date()
-    });
-
-    res.json({
-      success: true,
-      message: 'Interview ended successfully'
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    console.error('Interview start error:', error);
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
 // Get interview status
-router.get('/:interviewId/status', authenticateToken, async (req, res) => {
+router.get('/status/:interviewId', authenticateToken, async (req, res) => {
   try {
     const { interviewId } = req.params;
-    
-    const interviewDoc = await db.collection('interviews').doc(interviewId).get();
+    const { uid } = req.user;
+
+    const interviewDoc = await adminDB.collection('interviews').doc(interviewId).get();
     if (!interviewDoc.exists) {
-      return res.status(404).json({
-        success: false,
-        message: 'Interview not found'
-      });
+      return res.status(404).json({ success: false, message: 'Interview not found' });
     }
 
-    const interview = interviewDoc.data();
+    const interviewData = interviewDoc.data();
     
+    // Check if user owns this interview
+    if (interviewData.userId !== uid) {
+      return res.status(403).json({ success: false, message: 'Unauthorized' });
+    }
+
     res.json({
       success: true,
-      status: interview.status,
-      currentQuestionIndex: interview.currentQuestionIndex,
-      totalQuestions: interview.questions.length,
-      responsesCompleted: interview.responses.length,
-      timeElapsed: new Date() - interview.startTime.toDate(),
-      timeRemaining: getTimeRemaining(interview.startTime)
+      interview: interviewData
     });
+
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    console.error('Interview status error:', error);
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
-// Helper function to calculate remaining time
-function getTimeRemaining(startTime) {
-  const maxDuration = 30 * 60 * 1000; // 30 minutes in milliseconds
-  const elapsed = new Date() - startTime.toDate();
-  const remaining = Math.max(0, maxDuration - elapsed);
-  return remaining;
-}
+// Generate report
+router.post('/generate-report', authenticateToken, async (req, res) => {
+  try {
+    const { uid } = req.user;
+    const { interviewId } = req.body;
+
+    // Get interview data
+    const interviewDoc = await adminDB.collection('interviews').doc(interviewId).get();
+    if (!interviewDoc.exists) {
+      return res.status(404).json({ success: false, message: 'Interview not found' });
+    }
+
+    const interviewData = interviewDoc.data();
+    
+    // Check if user owns this interview
+    if (interviewData.userId !== uid) {
+      return res.status(403).json({ success: false, message: 'Unauthorized' });
+    }
+
+    // Get resume data
+    const resumeDoc = await adminDB.collection('resumes').doc(interviewData.resumeId).get();
+    const resumeData = resumeDoc.data();
+
+    // Generate report
+    const reportData = {
+      userId: uid,
+      interviewId,
+      questions: interviewData.questions,
+      answers: interviewData.answers,
+      resumeData,
+      duration: interviewData.endTime - interviewData.startTime,
+      audioAnalysis: interviewData.audioData
+    };
+
+    const report = await reportGenerator.generateReport(reportData);
+
+    res.json({
+      success: true,
+      report
+    });
+
+  } catch (error) {
+    console.error('Report generation error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Get report
+router.get('/report/:interviewId', authenticateToken, async (req, res) => {
+  try {
+    const { interviewId } = req.params;
+    const { uid } = req.user;
+
+    const reportDoc = await adminDB.collection('reports').doc(interviewId).get();
+    if (!reportDoc.exists) {
+      return res.status(404).json({ success: false, message: 'Report not found' });
+    }
+
+    const reportData = reportDoc.data();
+    
+    // Check if user owns this report
+    if (reportData.userId !== uid) {
+      return res.status(403).json({ success: false, message: 'Unauthorized' });
+    }
+
+    res.json({
+      success: true,
+      report: reportData
+    });
+
+  } catch (error) {
+    console.error('Get report error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
 
 module.exports = router;

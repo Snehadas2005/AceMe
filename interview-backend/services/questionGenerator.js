@@ -1,226 +1,236 @@
+const { adminDB } = require('../config/firebase');
 const natural = require('natural');
-const sentiment = require('sentiment');
-const Sentiment = new sentiment();
 
-class NLPAnalyzer {
+class QuestionGenerator {
   constructor() {
-    this.tokenizer = new natural.WordTokenizer();
-    this.stemmer = natural.PorterStemmer;
-    this.analyzer = new natural.SentimentAnalyzer('English', 
-      natural.PorterStemmer, 'afinn');
-  }
-
-  analyzeGrammar(text) {
-    // Basic grammar analysis
-    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
-    const words = this.tokenizer.tokenize(text.toLowerCase());
-    
-    // Check for common grammatical issues
-    const issues = [];
-    
-    // Subject-verb agreement (basic check)
-    const subjectVerbIssues = this.checkSubjectVerbAgreement(text);
-    issues.push(...subjectVerbIssues);
-    
-    // Sentence structure
-    const structureScore = this.analyzeSentenceStructure(sentences);
-    
-    // Vocabulary complexity
-    const vocabularyScore = this.analyzeVocabulary(words);
-    
-    return {
-      grammarScore: Math.max(0, 100 - (issues.length * 10)),
-      structureScore,
-      vocabularyScore,
-      issues,
-      sentenceCount: sentences.length,
-      wordCount: words.length
+    this.questionBank = {
+      general: [
+        {
+          id: 'gen_1',
+          text: 'Tell me about yourself and your professional background.',
+          type: 'general',
+          expectedDuration: 120,
+          domain: 'general'
+        },
+        {
+          id: 'gen_2', 
+          text: 'What are your greatest strengths and how do they relate to this role?',
+          type: 'behavioral',
+          expectedDuration: 90,
+          domain: 'general'
+        },
+        {
+          id: 'gen_3',
+          text: 'Describe a challenging situation you faced and how you handled it.',
+          type: 'behavioral',
+          expectedDuration: 150,
+          domain: 'general'
+        }
+      ],
+      technical: {
+        software: [
+          {
+            id: 'tech_sw_1',
+            text: 'Explain the difference between REST and GraphQL APIs.',
+            type: 'technical',
+            expectedDuration: 120,
+            domain: 'software'
+          },
+          {
+            id: 'tech_sw_2',
+            text: 'How would you optimize a slow database query?',
+            type: 'technical',
+            expectedDuration: 150,
+            domain: 'software'
+          },
+          {
+            id: 'tech_sw_3',
+            text: 'Describe your experience with cloud platforms and deployment.',
+            type: 'technical',
+            expectedDuration: 120,
+            domain: 'software'
+          }
+        ],
+        data: [
+          {
+            id: 'tech_data_1',
+            text: 'Explain the difference between supervised and unsupervised learning.',
+            type: 'technical',
+            expectedDuration: 120,
+            domain: 'data'
+          },
+          {
+            id: 'tech_data_2',
+            text: 'How would you handle missing data in a large dataset?',
+            type: 'technical',
+            expectedDuration: 150,
+            domain: 'data'
+          }
+        ],
+        marketing: [
+          {
+            id: 'tech_mkt_1',
+            text: 'How do you measure the success of a marketing campaign?',
+            type: 'technical',
+            expectedDuration: 120,
+            domain: 'marketing'
+          },
+          {
+            id: 'tech_mkt_2',
+            text: 'Explain your approach to customer segmentation.',
+            type: 'technical',
+            expectedDuration: 150,
+            domain: 'marketing'
+          }
+        ]
+      },
+      experience: [
+        {
+          id: 'exp_1',
+          text: 'Walk me through a project you\'re particularly proud of.',
+          type: 'experience',
+          expectedDuration: 180,
+          domain: 'general'
+        },
+        {
+          id: 'exp_2',
+          text: 'How do you stay updated with industry trends and technologies?',
+          type: 'experience',
+          expectedDuration: 90,
+          domain: 'general'
+        },
+        {
+          id: 'exp_3',
+          text: 'Describe a time when you had to learn something new quickly.',
+          type: 'behavioral',
+          expectedDuration: 120,
+          domain: 'general'
+        }
+      ]
     };
   }
 
-  analyzeSentiment(text) {
-    const result = Sentiment.analyze(text);
-    
-    // Normalize score to 0-100 scale
-    const normalizedScore = Math.max(0, Math.min(100, (result.score + 10) * 5));
-    
-    return {
-      score: normalizedScore,
-      comparative: result.comparative,
-      positive: result.positive,
-      negative: result.negative,
-      confidence: this.calculateConfidenceLevel(text)
-    };
+  async generateQuestions(resumeData) {
+    try {
+      const { skills, experience, education, jobTitles } = resumeData;
+      
+      // Determine primary domain based on resume
+      const primaryDomain = this.identifyDomain(skills, jobTitles);
+      
+      // Generate personalized questions
+      const questions = [];
+      
+      // Add general questions (2-3)
+      questions.push(...this.selectGeneralQuestions(2));
+      
+      // Add technical questions based on domain (3-4)
+      if (this.questionBank.technical[primaryDomain]) {
+        questions.push(...this.selectTechnicalQuestions(primaryDomain, 3));
+      }
+      
+      // Add experience-based questions (2-3)
+      questions.push(...this.selectExperienceQuestions(experience, 2));
+      
+      // Add personalized questions based on resume keywords
+      const personalizedQuestions = this.generatePersonalizedQuestions(resumeData);
+      questions.push(...personalizedQuestions);
+      
+      // Shuffle and limit to 8-10 questions for 30-minute interview
+      const finalQuestions = this.shuffleAndLimit(questions, 8);
+      
+      return finalQuestions;
+      
+    } catch (error) {
+      console.error('Question generation error:', error);
+      throw error;
+    }
   }
 
-  calculateConfidenceLevel(text) {
-    const uncertainWords = ['maybe', 'perhaps', 'possibly', 'might', 'could be', 'i think', 'i believe', 'probably'];
-    const confidentWords = ['definitely', 'certainly', 'absolutely', 'clearly', 'obviously', 'without doubt'];
-    
-    const lowerText = text.toLowerCase();
-    let uncertainCount = 0;
-    let confidentCount = 0;
-    
-    uncertainWords.forEach(word => {
-      if (lowerText.includes(word)) uncertainCount++;
-    });
-    
-    confidentWords.forEach(word => {
-      if (lowerText.includes(word)) confidentCount++;
-    });
-    
-    const totalWords = text.split(/\s+/).length;
-    const confidenceScore = Math.max(0, 100 - (uncertainCount / totalWords) * 200 + (confidentCount / totalWords) * 100);
-    
-    return Math.min(100, confidenceScore);
-  }
-
-  analyzeSubjectKnowledge(answer, resumeKeywords, questionDomain) {
-    const answerTokens = this.tokenizer.tokenize(answer.toLowerCase());
-    const resumeTokens = resumeKeywords.map(k => k.toLowerCase());
-    
-    // Technical term matching
-    const technicalTerms = this.extractTechnicalTerms(answer, questionDomain);
-    
-    // Keyword overlap with resume
-    const keywordMatches = resumeTokens.filter(keyword => 
-      answerTokens.some(token => token.includes(keyword) || keyword.includes(token))
-    ).length;
-    
-    // Depth analysis based on answer length and complexity
-    const depthScore = this.analyzeAnswerDepth(answer);
-    
-    return {
-      relevanceScore: (keywordMatches / resumeTokens.length) * 100,
-      technicalScore: technicalTerms.score,
-      depthScore,
-      overallScore: (
-        (keywordMatches / resumeTokens.length) * 40 +
-        technicalTerms.score * 0.4 +
-        depthScore * 0.2
-      ),
-      technicalTermsFound: technicalTerms.terms,
-      keywordMatches: keywordMatches
-    };
-  }
-
-  extractTechnicalTerms(text, domain) {
-    const domainTerms = {
-      'software': ['api', 'database', 'algorithm', 'framework', 'architecture', 'deployment', 'scaling', 'microservices'],
-      'data': ['analytics', 'machine learning', 'statistics', 'visualization', 'pipeline', 'modeling', 'regression'],
-      'marketing': ['roi', 'conversion', 'engagement', 'analytics', 'campaign', 'targeting', 'segmentation'],
-      'finance': ['portfolio', 'risk', 'investment', 'valuation', 'equity', 'derivatives', 'capital']
+  identifyDomain(skills, jobTitles) {
+    const domains = {
+      software: ['javascript', 'python', 'java', 'react', 'node', 'api', 'database', 'web development', 'software engineer', 'full stack', 'backend', 'frontend'],
+      data: ['data science', 'machine learning', 'analytics', 'python', 'sql', 'tableau', 'data analyst', 'data scientist', 'statistics'],
+      marketing: ['marketing', 'digital marketing', 'seo', 'social media', 'campaigns', 'marketing manager', 'brand', 'content marketing']
     };
     
-    const relevantTerms = domainTerms[domain] || [];
-    const foundTerms = [];
+    const allText = [...skills, ...jobTitles].join(' ').toLowerCase();
     
-    relevantTerms.forEach(term => {
-      if (text.toLowerCase().includes(term)) {
-        foundTerms.push(term);
+    let maxMatches = 0;
+    let primaryDomain = 'software'; // default
+    
+    Object.entries(domains).forEach(([domain, keywords]) => {
+      const matches = keywords.filter(keyword => allText.includes(keyword)).length;
+      if (matches > maxMatches) {
+        maxMatches = matches;
+        primaryDomain = domain;
       }
     });
     
-    return {
-      terms: foundTerms,
-      score: (foundTerms.length / relevantTerms.length) * 100
-    };
+    return primaryDomain;
   }
 
-  analyzeAnswerDepth(answer) {
-    const sentences = answer.split(/[.!?]+/).filter(s => s.trim().length > 0);
-    const words = answer.split(/\s+/).length;
-    
-    // Complexity indicators
-    const complexWords = answer.match(/\b\w{7,}\b/g) || [];
-    const examples = answer.match(/\b(for example|such as|like|including)\b/gi) || [];
-    
-    return Math.min(100, (
-      (sentences.length * 10) +
-      (words * 0.5) +
-      (complexWords.length * 2) +
-      (examples.length * 15)
-    ));
+  selectGeneralQuestions(count) {
+    return this.getRandomQuestions(this.questionBank.general, count);
   }
 
-  checkSubjectVerbAgreement(text) {
-    const issues = [];
-    // This is a simplified check - in production, use a proper grammar checker
-    const patterns = [
-      /\b(he|she|it)\s+(are|were)\b/gi,
-      /\b(they|we|you)\s+(is|was)\b/gi,
-      /\b(I)\s+(are|is)\b/gi
-    ];
-    
-    patterns.forEach(pattern => {
-      const matches = text.match(pattern);
-      if (matches) {
-        issues.push(...matches.map(match => ({
-          type: 'subject_verb_agreement',
-          text: match,
-          suggestion: 'Check subject-verb agreement'
-        })));
-      }
-    });
-    
-    return issues;
+  selectTechnicalQuestions(domain, count) {
+    const technicalQuestions = this.questionBank.technical[domain] || [];
+    return this.getRandomQuestions(technicalQuestions, count);
   }
 
-  analyzeSentenceStructure(sentences) {
-    let score = 100;
-    
-    sentences.forEach(sentence => {
-      const words = sentence.trim().split(/\s+/).length;
-      
-      // Too short sentences
-      if (words < 5) score -= 5;
-      
-      // Too long sentences
-      if (words > 30) score -= 10;
-      
-      // Check for variety in sentence starters
-      // This is simplified - would need more sophisticated analysis
-    });
-    
-    return Math.max(0, score);
+  selectExperienceQuestions(experience, count) {
+    return this.getRandomQuestions(this.questionBank.experience, count);
   }
 
-  analyzeVocabulary(words) {
-    const uniqueWords = [...new Set(words)];
-    const vocabularyDiversity = uniqueWords.length / words.length;
+  generatePersonalizedQuestions(resumeData) {
+    const personalizedQuestions = [];
+    const { skills, experience, projects } = resumeData;
     
-    // Complex words (7+ letters)
-    const complexWords = words.filter(word => word.length >= 7);
-    const complexityRatio = complexWords.length / words.length;
+    // Generate questions based on specific skills
+    if (skills.includes('leadership')) {
+      personalizedQuestions.push({
+        id: 'pers_lead_1',
+        text: 'Can you describe a time when you had to lead a team through a difficult project?',
+        type: 'behavioral',
+        expectedDuration: 150,
+        domain: 'leadership'
+      });
+    }
     
-    return Math.min(100, (vocabularyDiversity * 60) + (complexityRatio * 40));
+    // Generate questions based on specific projects
+    if (projects && projects.length > 0) {
+      personalizedQuestions.push({
+        id: 'pers_proj_1',
+        text: `I see you worked on ${projects[0].name}. What was the most challenging aspect of this project?`,
+        type: 'experience',
+        expectedDuration: 180,
+        domain: 'project'
+      });
+    }
+    
+    // Generate questions based on career progression
+    if (experience && experience.length > 2) {
+      personalizedQuestions.push({
+        id: 'pers_career_1',
+        text: 'How has your career evolved, and what motivated your career transitions?',
+        type: 'behavioral',
+        expectedDuration: 150,
+        domain: 'career'
+      });
+    }
+    
+    return personalizedQuestions;
   }
 
-  analyzeProfessionalism(text) {
-    const informalWords = ['yeah', 'ok', 'cool', 'awesome', 'stuff', 'things', 'gonna', 'wanna'];
-    const professionalWords = ['certainly', 'absolutely', 'specifically', 'particularly', 'furthermore', 'however'];
-    
-    const lowerText = text.toLowerCase();
-    let informalCount = 0;
-    let professionalCount = 0;
-    
-    informalWords.forEach(word => {
-      const regex = new RegExp(`\\b${word}\\b`, 'g');
-      const matches = lowerText.match(regex);
-      if (matches) informalCount += matches.length;
-    });
-    
-    professionalWords.forEach(word => {
-      const regex = new RegExp(`\\b${word}\\b`, 'g');
-      const matches = lowerText.match(regex);
-      if (matches) professionalCount += matches.length;
-    });
-    
-    const totalWords = text.split(/\s+/).length;
-    const professionalismScore = Math.max(0, 100 - (informalCount / totalWords) * 200 + (professionalCount / totalWords) * 100);
-    
-    return Math.min(100, professionalismScore);
+  getRandomQuestions(questionArray, count) {
+    const shuffled = [...questionArray].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, count);
+  }
+
+  shuffleAndLimit(questions, limit) {
+    const shuffled = [...questions].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, limit);
   }
 }
 
-module.exports = new NLPAnalyzer();
+module.exports = new QuestionGenerator();
