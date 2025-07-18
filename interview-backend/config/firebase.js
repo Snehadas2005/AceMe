@@ -1,3 +1,4 @@
+// backend/config/firebase.js
 const admin = require('firebase-admin');
 const { initializeApp } = require('firebase/app');
 const { getFirestore } = require('firebase/firestore');
@@ -18,7 +19,7 @@ const serviceAccount = {
   client_x509_cert_url: `https://www.googleapis.com/robot/v1/metadata/x509/${process.env.FIREBASE_ADMIN_CLIENT_EMAIL}`
 };
 
-// Initialize Firebase Admin
+// Initialize Firebase Admin (Server-side only)
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
@@ -26,38 +27,92 @@ if (!admin.apps.length) {
   });
 }
 
-// Client-side Firebase config
-const firebaseConfig = {
-  apiKey: "AIzaSyA6TiOM6JvE_f4ohOmCqqrI4WAzvjmhz0o",
-  authDomain: "aceme-7ec4f.firebaseapp.com",
-  projectId: "aceme-7ec4f",
-  storageBucket: "aceme-7ec4f.firebasestorage.app",
-  messagingSenderId: "1092971619463",
-  appId: "1:1092971619463:web:9d5f944aa34881bcbb0422",
-  measurementId: "G-39Y7L7MFPG"
-};
-
-// Initialize Firebase Client SDK
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const storage = getStorage(app);
-const auth = getAuth(app);
-
-// Admin instances
+// Admin instances for server-side operations
 const adminDB = admin.firestore();
 const adminStorage = admin.storage();
 const adminAuth = admin.auth();
 
+// Utility functions for common operations
+const firebaseUtils = {
+  // Verify Firebase ID token
+  async verifyIdToken(idToken) {
+    try {
+      const decodedToken = await adminAuth.verifyIdToken(idToken);
+      return decodedToken;
+    } catch (error) {
+      throw new Error('Invalid token: ' + error.message);
+    }
+  },
+
+  // Create custom token
+  async createCustomToken(uid, additionalClaims = {}) {
+    try {
+      const customToken = await adminAuth.createCustomToken(uid, additionalClaims);
+      return customToken;
+    } catch (error) {
+      throw new Error('Error creating custom token: ' + error.message);
+    }
+  },
+
+  // Get user by email
+  async getUserByEmail(email) {
+    try {
+      const userRecord = await adminAuth.getUserByEmail(email);
+      return userRecord;
+    } catch (error) {
+      throw new Error('Error fetching user: ' + error.message);
+    }
+  },
+
+  // Create user
+  async createUser(userData) {
+    try {
+      const userRecord = await adminAuth.createUser(userData);
+      return userRecord;
+    } catch (error) {
+      throw new Error('Error creating user: ' + error.message);
+    }
+  },
+
+  // Update user
+  async updateUser(uid, userData) {
+    try {
+      const userRecord = await adminAuth.updateUser(uid, userData);
+      return userRecord;
+    } catch (error) {
+      throw new Error('Error updating user: ' + error.message);
+    }
+  },
+
+  // Delete user
+  async deleteUser(uid) {
+    try {
+      await adminAuth.deleteUser(uid);
+      return { success: true };
+    } catch (error) {
+      throw new Error('Error deleting user: ' + error.message);
+    }
+  }
+};
+
 module.exports = {
-  // Client SDK
-  app,
-  db,
-  storage,
-  auth,
-  
-  // Admin SDK
+  // Admin SDK instances
   admin,
   adminDB,
   adminStorage,
-  adminAuth
+  adminAuth,
+  
+  // Utility functions
+  firebaseUtils,
+  
+  // Firebase config for client-side (to be sent to frontend)
+  getClientConfig: () => ({
+    apiKey: "AIzaSyA6TiOM6JvE_f4ohOmCqqrI4WAzvjmhz0o",
+    authDomain: "aceme-7ec4f.firebaseapp.com",
+    projectId: "aceme-7ec4f",
+    storageBucket: "aceme-7ec4f.firebasestorage.app",
+    messagingSenderId: "1092971619463",
+    appId: "1:1092971619463:web:9d5f944aa34881bcbb0422",
+    measurementId: "G-39Y7L7MFPG"
+  })
 };
