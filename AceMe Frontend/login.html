@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  
+  <title>Sign In</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --text: #f1f5f9;
+      --accent: #6366f1;
+      --cyan: #06b6d4;
+      --error: #ef4444;
+      --success: #22c55e;
+      --glass: rgba(255, 255, 255, 0.05);
+      --radius: 1rem;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .login-container {
+      background: var(--glass);
+      padding: 3rem 2rem;
+      border-radius: var(--radius);
+      backdrop-filter: blur(8px);
+      width: 360px;
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.15);
+    }
+
+    .login-container h2 {
+      text-align: center;
+      margin-bottom: 2rem;
+      font-size: 2rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+      position: relative;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      padding-right: 40px;
+      border-radius: 0.5rem;
+      border: 1px solid #334155;
+      background-color: #1e293b;
+      color: var(--text);
+      font-size: 1rem;
+    }
+
+    .form-group input:focus {
+      border-color: var(--accent);
+      outline: none;
+    }
+
+    .toggle-password {
+      position: absolute;
+      top: 50%;
+      right: 1rem;
+      transform: translateY(-50%);
+      cursor: pointer;
+      color: var(--cyan);
+      font-size: 0.9rem;
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: none;
+      border-radius: 0.5rem;
+      font-size: 1rem;
+      font-weight: bold;
+      background: linear-gradient(to right, var(--accent), var(--cyan));
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .login-btn:hover {
+      box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .extra-links {
+      text-align: center;
+      font-size: 0.9rem;
+      margin-top: 1rem;
+    }
+
+    .extra-links a {
+      color: var(--cyan);
+      text-decoration: none;
+    }
+
+    .extra-links a:hover {
+      text-decoration: underline;
+    }
+
+    .error {
+      color: var(--error);
+      font-size: 0.85rem;
+      display: none;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-container">
+    <h2>Sign In</h2>
+    <form id="login-form">
+      <div class="form-group">
+        <label for="email">Email or Username</label>
+        <input type="text" id="email" name="email" required />
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required />
+        <span class="toggle-password" id="togglePassword">Show</span>
+      </div>
+
+      <div class="error" id="error-msg">Please fill in all fields.</div>
+
+      <button type="submit" class="login-btn">Login</button>
+    </form>
+
+    <div class="extra-links">
+      <p>Don’t have an account? <a href="register.html">Register</a>
+
+      <p><a href="#">Forgot Password?</a></p>
+    </div>
+  </div>
+
+<script>
+  const form = document.getElementById("login-form");
+  const email = document.getElementById("email");
+  const password = document.getElementById("password");
+  const errorMsg = document.getElementById("error-msg");
+
+  form.addEventListener("submit", function(e) {
+    e.preventDefault(); // ✅ Stop form from reloading the page
+
+    if (email.value.trim() === "" || password.value.trim() === "") {
+      errorMsg.style.display = "block";
+    } else {
+      errorMsg.style.display = "none";
+      window.location.href = "start.html"; // ✅ Navigate here
+    }
+  });
+</script>
+
+</body>
+</html>
+
