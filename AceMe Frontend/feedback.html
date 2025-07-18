@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AceMe AI - Feedback</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<style>
+  :root {
+    --bg: #0f172a;
+    --text: #f1f5f9;
+    --accent: #6366f1;
+    --cyan: #06b6d4;
+    --error: #ef4444;
+    --success: #22c55e;
+    --glass: rgba(255, 255, 255, 0.05);
+    --radius: 1rem;
+  }
+
+  body {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+  }
+
+  .header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 40px;
+    background-color: #0e1528;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+  }
+
+  .logo {
+    font-size: 1.6rem;
+    font-weight: 800;
+    background: linear-gradient(to right, var(--accent), var(--cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .nav-links a {
+    color: var(--text);
+    text-decoration: none;
+    margin-left: 25px;
+    font-size: 16px;
+    font-weight: 600;
+    transition: color 0.2s ease;
+  }
+
+  .nav-links a:hover {
+    color: var(--cyan);
+  }
+
+  .feedback-container {
+    width: 100%;
+    max-width: 900px;
+    padding: 40px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+  }
+
+  .feedback-card {
+    background-color: var(--glass);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius);
+    padding: 25px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    backdrop-filter: blur(8px);
+  }
+
+  .feedback-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+
+  .card-header h3 {
+    margin: 0;
+    font-size: 22px;
+    color: var(--text);
+  }
+
+  .score {
+    font-size: 20px;
+    font-weight: bold;
+    padding: 5px 10px;
+    border-radius: 5px;
+    min-width: 70px;
+    text-align: center;
+  }
+
+  .score.high {
+    background-color: var(--success);
+    color: #fff;
+  }
+
+  .score.medium {
+    background-color: #facc15;
+    color: #111;
+  }
+
+  .score.low {
+    background-color: var(--error);
+    color: #fff;
+  }
+
+  .feedback-points ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .feedback-points li {
+    font-size: 16px;
+    color: #cbd5e1;
+    margin-bottom: 8px;
+    padding-left: 20px;
+    position: relative;
+  }
+
+  .feedback-points li::before {
+    content: "•";
+    color: #94a3b8;
+    font-weight: bold;
+    display: inline-block;
+    width: 1em;
+    margin-left: -1em;
+  }
+
+  @media (max-width: 768px) {
+    .header {
+      padding: 10px 20px;
+    }
+    .logo {
+      font-size: 20px;
+    }
+    .nav-links a {
+      margin-left: 15px;
+      font-size: 14px;
+    }
+    .feedback-container {
+      padding: 20px 15px;
+      gap: 20px;
+    }
+    .feedback-card {
+      padding: 20px;
+    }
+    .card-header h3 {
+      font-size: 20px;
+    }
+    .score {
+      font-size: 18px;
+      min-width: 60px;
+    }
+    .feedback-points li {
+      font-size: 15px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .header {
+      flex-direction: column;
+      padding: 10px;
+    }
+    .nav-links {
+      margin-top: 10px;
+    }
+    .nav-links a {
+      margin: 0 10px;
+    }
+    .feedback-container {
+      padding: 15px 10px;
+      gap: 15px;
+    }
+    .feedback-card {
+      padding: 15px;
+    }
+    .card-header h3 {
+      font-size: 18px;
+    }
+    .score {
+      font-size: 16px;
+      min-width: 50px;
+    }
+    .feedback-points li {
+      font-size: 14px;
+    }
+  }
+</style>
+
+</head>
+<body>
+    <header class="header">
+        <div class="logo">AceMe</div>
+        <nav class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="#" id="try-again-btn">Try Again</a>
+        </nav>
+    </header>
+
+    <main class="feedback-container" id="feedback-container">
+        <!-- Feedback cards will be dynamically inserted here by JavaScript -->
+    </main>
+
+    <script>
+        // JavaScript for the Feedback Page
+
+        // Sample feedback data (replace with actual data from your AI backend)
+        const feedbackData = [
+            {
+                category: "Confidence",
+                score: 8, // Out of 10
+                feedbackPoints: [
+                    "Maintain consistent eye contact (if video-based).",
+                    "Your tone shows control — great job!",
+                    "Just a little more energy for technical answers."
+                ]
+            },
+            {
+                category: "Speaking Clarity",
+                score: 6,
+                feedbackPoints: [
+                    "Slow down during complex answers.",
+                    "Avoid filler words like \"umm\" or \"like\"."
+                ]
+            },
+            {
+                category: "Technical Depth",
+                score: 3,
+                feedbackPoints: [
+                    "Review key data structures and algorithms.",
+                    "Give structured answers (define, approach, optimize).",
+                    "Practice mock coding questions daily."
+                ]
+            },
+            {
+                category: "Response Time",
+                score: 5,
+                feedbackPoints: [
+                    "Take a short pause, then answer confidently.",
+                    "Use frameworks like STAR (Situation, Task, Action, Result)."
+                ]
+            },
+            {
+                category: "Problem Solving",
+                score: 7,
+                feedbackPoints: [
+                    "Clearly articulate your thought process.",
+                    "Break down complex problems into smaller steps.",
+                    "Consider edge cases and alternative solutions."
+                ]
+            },
+            {
+                category: "Communication Skills",
+                score: 9,
+                feedbackPoints: [
+                    "Excellent active listening skills.",
+                    "Clear and concise explanations.",
+                    "Engaging and professional demeanor."
+                ]
+            }
+        ];
+
+        // Function to determine score class for styling
+        function getScoreClass(score) {
+            if (score >= 7) {
+                return 'high';
+            } else if (score >= 4) {
+                return 'medium';
+            } else {
+                return 'low';
+            }
+        }
+
+        // Function to render feedback cards
+        function renderFeedbackCards() {
+            const container = document.getElementById('feedback-container');
+            if (!container) return; // Exit if container not found
+
+            container.innerHTML = ''; // Clear existing content
+
+            feedbackData.forEach(item => {
+                const scoreClass = getScoreClass(item.score);
+                const card = document.createElement('div');
+                card.classList.add('feedback-card');
+
+                let feedbackPointsHtml = item.feedbackPoints.map(point => `<li>${point}</li>`).join('');
+
+                card.innerHTML = `
+                    <div class="card-header">
+                        <h3>${item.category}</h3>
+                        <div class="score ${scoreClass}">${item.score}/10</div>
+                    </div>
+                    <div class="feedback-points">
+                        <ul>
+                            ${feedbackPointsHtml}
+                        </ul>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Event listener for "Try Again" button
+        document.getElementById('try-again-btn').addEventListener('click', (event) => {
+            event.preventDefault(); // Prevent default link behavior
+            // In a real application, you might redirect to the interview page
+            // or reset the state to start a new interview.
+            alert('Starting a new interview! (This would redirect to the interview page)');
+            // Example: window.location.href = 'interview.html';
+        });
+
+        // Render cards when the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', renderFeedbackCards);
+    </script>
+</body>
+</html>
+
