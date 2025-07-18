@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PersonaPrep – Start Interview</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://unpkg.com/lottie-web@5.10.2/build/player/lottie.min.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      
+      font-family: "Segoe UI", sans-serif;
+      background: linear-gradient(145deg, #111827, #1f2937);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      
+      
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      background-color: #0f172a;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+    
+    .logo {
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: #38bdf8;
+    }
+
+    .nav-links a {
+      color: #cbd5e1;
+      text-decoration: none;
+      font-weight: 500;
+      margin-left: 1.5rem;
+    }
+
+.hero {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: flex-start; /* shift content toward top */
+  justify-content: center;
+  padding: 1rem 2rem 3rem;  /* less top padding */
+  flex-wrap: wrap;
+}
+
+    .hero-animation {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+.hero-text {
+  flex: 1;
+  max-width: 600px;
+  margin-top: 0;
+  padding: 2rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* Vertically center */
+}
+
+
+    h2 {
+      font-size: 2.5rem;
+     
+      color: #f8fafc;
+      margin-left: 2rem;
+       text-align: center;
+    }
+
+    p {
+      font-size: 1rem;
+      color: #94a3b8;
+       margin-bottom: 1rem;
+    }
+
+    .cta-button {
+      background-color: #38bdf8;
+      border: none;
+      color: #0f172a;
+      padding: 0.8rem 1.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: background 0.3s ease;
+      margin-top: 0.5rem;
+    }
+
+    .cta-button:hover {
+      background-color: #0ea5e9;
+    }
+
+.feature-card {
+  background-color: #1e293b;
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-top: 2rem;
+  margin-left: 2r; /* remove unnecessary left margin */
+  width: 100%; /* make it fill the container */
+  max-width: 700px; /* control how broad it gets */
+  align-self: center; /* center it horizontally */
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+  border: 1.5px solid #334155;
+}
+
+
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    ul li::before {
+      content: '✅ ';
+      color: #22c55e;
+    }
+
+    label {
+      display: inline-block;
+      margin-top: 1rem;
+      font-size: 0.95rem;
+    }
+    .hero-animation {
+  display: flex;
+  margin-right: 1.5rem; /* Moves content to the right */
+  align-items: center;
+}
+
+
+    input[type="checkbox"] {
+      margin-right: 8px;
+    }
+
+    #file-name {
+      color: #a5f3fc;
+
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- NAVBAR -->
+  <header class="navbar">
+    <div class="logo">AceMe</div>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+    </div>
+  </header>
+
+  <!-- MAIN SECTION -->
+  <section class="hero">
+    <!-- Lottie Animation -->
+    <div class="hero-animation">
+      <div id="lottie-avatar" style="width: 600px; height: 600px;"></div>
+    </div>
+
+    <!-- Interview Prep Text -->
+    <div class="hero-text">
+      <h2>Get Interview Ready 🚀</h2>
+      <p>Upload your resume, review the rules, and start your mock interview experience with confidence.</p>
+
+      <!-- Upload Resume -->
+      <div>
+        <label class="cta-button" for="resume-upload">📄 Upload Resume</label>
+        <input type="file" id="resume-upload" accept=".pdf,.doc,.docx" style="display: none;">
+        <p id="file-name"></p>
+      </div>
+
+      <!-- Interview Guidelines -->
+      <div class="feature-card">
+        <h3 style="color: #faf9f8;">📋 Interview Instructions</h3>
+        <ul style="text-align: left; line-height: 1.8; font-size: 0.95rem; margin-top: 1rem;">
+          <li>Speak only your answers – no typing</li>
+          <li>45 seconds to answer each question</li>
+          <li>Metrics: Confidence, Tone, Speed</li>
+          <li>Allow access to microphone + camera</li>
+        </ul>
+
+        <label>
+          <input type="checkbox" id="acknowledge" /> I understand and agree to follow the instructions
+        </label>
+      </div>
+
+      <!-- Start Button -->
+      <button class="cta-button" onclick="startInterview()">✅ Start Interview</button>
+    </div>
+  </section>
+
+  <!-- Lottie Animation Script -->
+  <script>
+    lottie.loadAnimation({
+      container: document.getElementById('lottie-avatar'),
+      renderer: 'svg',
+      loop: true,
+      autoplay: true,
+      path: 'assets/animation/robot.json'
+    });
+
+    const upload = document.getElementById("resume-upload");
+    const fileName = document.getElementById("file-name");
+
+    upload.addEventListener("change", () => {
+      fileName.textContent = upload.files[0]?.name || "";
+    });
+
+    function startInterview() {
+      const resume = document.getElementById('resume-upload').files[0];
+      const acknowledged = document.getElementById('acknowledge').checked;
+
+      if (!resume) {
+        alert('⚠️ Please upload your resume.');
+        return;
+      }
+
+      if (!acknowledged) {
+        alert('⚠️ Please acknowledge the interview guidelines.');
+        return;
+      }
+
+      const allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+      if (!allowedTypes.includes(resume.type)) {
+        alert('❌ Invalid file. Please upload a PDF or Word document.');
+        return;
+      }
+
+      alert('✅ All set! Launching your AI interview...');
+      window.location.href = 'studio.html';
+    }
+  </script>
+
+</body>
+</html>
