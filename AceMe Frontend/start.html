@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Interview – AceMe</title>
+  <style>
+    :root {
+      --primary: #16c79a;
+      --bg: #f8f9fa;
+      --white: #fff;
+      --text: #333;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      padding: 1rem;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: var(--white);
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+    }
+
+    h1 {
+      text-align: center;
+      color: var(--primary);
+      margin-bottom: 1rem;
+      font-size: 2rem;
+    }
+
+    .instructions {
+      margin: 1rem 0;
+      padding: 1rem;
+      background: #eefaf6;
+      border-left: 4px solid var(--primary);
+      border-radius: 5px;
+    }
+
+    .instructions h2 {
+      margin-bottom: 0.8rem;
+      font-size: 1.2rem;
+    }
+
+    .instructions ul {
+      margin-left: 1rem;
+      line-height: 1.8;
+    }
+
+    label {
+      display: block;
+      margin-top: 1.5rem;
+      font-weight: bold;
+      font-size: 1rem;
+    }
+
+    .upload-area {
+      margin-top: 0.8rem;
+      padding: 2rem;
+      border: 2px dashed var(--primary);
+      background-color: #f4fdfb;
+      border-radius: 8px;
+      text-align: center;
+      transition: background 0.3s, border-color 0.3s;
+      cursor: pointer;
+    }
+
+    .upload-area.dragover {
+      background-color: #d9f7f1;
+      border-color: #0fa67b;
+    }
+
+    .upload-area p {
+      margin-bottom: 0.5rem;
+      font-size: 1rem;
+      color: #555;
+    }
+
+    .upload-area input {
+      display: none;
+    }
+
+    .terms {
+      margin-top: 2rem;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      background: #f4f4f4;
+      padding: 1rem;
+      border-radius: 6px;
+    }
+
+    .terms input {
+      margin-right: 8px;
+    }
+
+    .start-btn {
+      margin-top: 2rem;
+      text-align: center;
+    }
+
+    .start-btn button {
+      background: var(--primary);
+      color: white;
+      padding: 0.8rem 1.8rem;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .start-btn button:hover {
+      background: #13b78e;
+    }
+
+    .start-btn button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 3rem;
+      font-size: 0.85rem;
+      color: #666;
+    }
+
+    /* ✅ RESPONSIVE MEDIA QUERIES */
+    @media (max-width: 768px) {
+      .container {
+        padding: 1.5rem;
+      }
+
+      h1 {
+        font-size: 1.6rem;
+      }
+
+      .upload-area {
+        padding: 1.5rem;
+      }
+
+      .instructions h2 {
+        font-size: 1.1rem;
+      }
+
+      .start-btn button {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 1rem;
+      }
+
+      h1 {
+        font-size: 1.4rem;
+      }
+
+      .upload-area {
+        padding: 1rem;
+      }
+
+      label {
+        font-size: 0.95rem;
+      }
+
+      .instructions h2,
+      .terms {
+        font-size: 0.95rem;
+      }
+
+      .start-btn button {
+        padding: 0.8rem 1rem;
+        font-size: 0.95rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Get Interview Ready 🚀</h1>
+    <p style="text-align:center;">Upload your resume, review the rules, and start your mock interview experience with confidence.</p>
+
+    <label for="resumeInput">Upload Resume (PDF/DOC):</label>
+    <div class="upload-area" id="uploadArea">
+      <p>Drag & drop your resume here or click to select</p>
+      <input type="file" id="resumeInput" accept=".pdf,.doc,.docx">
+    </div>
+
+    <div class="instructions">
+      <h2>📌 Important Instructions</h2>
+      <ul>
+        <li>Ensure your camera and microphone are working properly.</li>
+        <li>Find a quiet and well-lit environment before starting.</li>
+        <li>Speak clearly and maintain eye contact with the camera.</li>
+        <li>Stay within the time limit for each question.</li>
+        <li>Do not close the tab or refresh once the interview starts.</li>
+      </ul>
+    </div>
+
+    <div class="terms">
+      <label>
+        <input type="checkbox" id="agree">
+        I have read and agree to the <strong>terms and conditions</strong>. I understand this interview is for practice purposes only.
+      </label>
+    </div>
+
+    <div class="start-btn">
+      <button id="startBtn" disabled onclick="startInterview()">Start AI Interview</button>
+    </div>
+  </div>
+
+  <footer>
+    &copy; 2025 AceMe AI – All Rights Reserved.
+  </footer>
+
+  <script>
+    const checkbox = document.getElementById("agree");
+    const startBtn = document.getElementById("startBtn");
+    const uploadArea = document.getElementById("uploadArea");
+    const resumeInput = document.getElementById("resumeInput");
+
+    checkbox.addEventListener("change", function () {
+      startBtn.disabled = !this.checked;
+    });
+
+    uploadArea.addEventListener("click", () => resumeInput.click());
+
+    uploadArea.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      uploadArea.classList.add("dragover");
+    });
+
+    uploadArea.addEventListener("dragleave", () => {
+      uploadArea.classList.remove("dragover");
+    });
+
+    uploadArea.addEventListener("drop", (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove("dragover");
+      const file = e.dataTransfer.files[0];
+      resumeInput.files = e.dataTransfer.files;
+      uploadArea.querySelector("p").textContent = `Selected: ${file.name}`;
+    });
+
+    resumeInput.addEventListener("change", () => {
+      if (resumeInput.files.length > 0) {
+        uploadArea.querySelector("p").textContent = `Selected: ${resumeInput.files[0].name}`;
+      }
+    });
+
+    function startInterview() {
+      alert("Interview started! Good luck 🌟");
+      window.location.href = 'studio.html';
+    }
+  </script>
+</body>
+</html>
+
+

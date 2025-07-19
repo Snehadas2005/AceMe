@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Interview – AceMe</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"/>
+  <style>
+    :root {
+      --primary: #16c79a;
+      --accent: #22c55e;
+      --bg: #f8f9fa;
+      --card: #ffffff;
+      --text: #333;
+      --secondary: #eefaf6;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: row;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .panel {
+      flex: 1;
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .left {
+      background-color: var(--bg);
+      justify-content: space-between;
+    }
+
+    .right {
+      background-color: var(--secondary);
+      justify-content: center;
+      align-items: center;
+    }
+
+    .question-box {
+      background: var(--card);
+      padding: 20px;
+      border-radius: 10px;
+      font-size: 1.2rem;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+      border-left: 4px solid var(--primary);
+    }
+
+    .timer {
+      font-size: 1rem;
+      margin-top: 10px;
+      color: var(--accent);
+    }
+
+    .ai-box {
+      background: var(--card);
+      padding: 20px;
+      border-radius: 10px;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      margin-top: 20px;
+      border-left: 4px solid var(--primary);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    .transcription {
+      font-style: italic;
+      color: #666;
+      margin-top: 10px;
+    }
+
+    .icons {
+      margin-top: 20px;
+      display: flex;
+      gap: 20px;
+    }
+
+    .icon {
+      font-size: 1.8rem;
+      padding: 10px;
+      background-color: var(--secondary);
+      border-radius: 50%;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .glow {
+      box-shadow: 0 0 15px var(--primary);
+      background-color: #a1e9d3;
+    }
+
+    .stop-button {
+      margin-top: 20px;
+      padding: 12px 24px;
+      background: linear-gradient(to right, var(--primary), #3b82f6);
+      color: white;
+      border: none;
+      border-radius: 30px;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+      align-self: flex-start;
+    }
+
+    .camera-preview {
+      width: 100%;
+      height: 100%;
+      border: 2px solid var(--primary);
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #ffffff;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Responsive: Tablets and smaller */
+    @media (max-width: 1024px) {
+      body {
+        flex-direction: column;
+        height: auto;
+      }
+
+      .panel {
+        width: 100%;
+        padding: 20px;
+      }
+
+      .left {
+        order: 2;
+      }
+
+      .right {
+        order: 1;
+        height: 300px;
+      }
+
+      .camera-preview {
+        height: 100%;
+        min-height: 200px;
+      }
+    }
+
+    /* Responsive: Phones */
+    @media (max-width: 600px) {
+      .question-box {
+        font-size: 1rem;
+      }
+
+      .stop-button {
+        width: 100%;
+        text-align: center;
+        font-size: 14px;
+      }
+
+      .icon {
+        font-size: 1.5rem;
+        padding: 8px;
+      }
+
+      .ai-box {
+        padding: 15px;
+      }
+
+      .camera-preview {
+        height: 250px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="panel left">
+    <div>
+      <div class="question-box" id="question-box"><strong>Question:</strong> Loading...</div>
+      <div class="timer" id="timer">⏱ Time Left: 60s</div>
+    </div>
+
+    <div class="ai-box">
+      <div>
+        <strong>Transcription:</strong>
+        <div class="transcription" id="user-transcription">Waiting for your response...</div>
+      </div>
+
+      <div class="icons">
+        <span id="ai-icon" class="icon">🤖</span>
+        <span id="mic-icon" class="icon">🎤</span>
+      </div>
+
+      <button class="stop-button" onclick="stopInterview()">⏹ Stop Interview</button>
+    </div>
+  </div>
+
+  <div class="panel right">
+    <div class="camera-preview" id="camera-preview">
+      <video id="user-video" autoplay muted></video>
+    </div>
+  </div>
+
+  <script>
+    const questions = [
+      "Tell me about yourself.",
+      "What are your strengths and weaknesses?",
+      "Why do you want to work here?",
+      "Describe a challenging situation and how you handled it.",
+      "Where do you see yourself in 5 years?",
+      "What makes you a good fit for this role?"
+    ];
+
+    let current = 0;
+    let timer;
+    let timeLeft = 60;
+
+    const box = document.getElementById("question-box");
+    const timerEl = document.getElementById("timer");
+    const aiIcon = document.getElementById("ai-icon");
+    const micIcon = document.getElementById("mic-icon");
+    const transcriptEl = document.getElementById("user-transcription");
+
+    function speakAI(text, callback) {
+      aiIcon.classList.add("glow");
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.onend = () => {
+        aiIcon.classList.remove("glow");
+        startListening();
+        startTimer();
+        if (callback) callback();
+      };
+      speechSynthesis.speak(utterance);
+    }
+
+    function startListening() {
+      micIcon.classList.add("glow");
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = "en-US";
+      recognition.onresult = (e) => {
+        const speech = e.results[0][0].transcript;
+        transcriptEl.textContent = speech;
+      };
+      recognition.onerror = (e) => {
+        transcriptEl.textContent = "❌ Mic error: " + e.error;
+      };
+      recognition.onend = () => {
+        micIcon.classList.remove("glow");
+      };
+      recognition.start();
+    }
+
+    function startTimer() {
+      timeLeft = 60;
+      timerEl.textContent = `⏱ Time Left: ${timeLeft}s`;
+      clearInterval(timer);
+      timer = setInterval(() => {
+        timeLeft--;
+        timerEl.textContent = `⏱ Time Left: ${timeLeft}s`;
+        if (timeLeft <= 0) {
+          clearInterval(timer);
+          transcriptEl.textContent += "\n⏳ Time's up!";
+          nextQuestion();
+        }
+      }, 1000);
+    }
+
+    function nextQuestion() {
+      current++;
+      if (current >= questions.length) {
+        window.location.href = "feedback.html";
+        return;
+      }
+      transcriptEl.textContent = "Waiting for your response...";
+      box.innerHTML = `<strong>Question:</strong> ${questions[current]}`;
+      speakAI(questions[current]);
+    }
+
+    function stopInterview() {
+      clearInterval(timer);
+      speechSynthesis.cancel();
+      transcriptEl.textContent = "Interview manually stopped.";
+      setTimeout(() => window.location.href = "feedback.html", 1500);
+    }
+
+    async function startCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        document.getElementById("user-video").srcObject = stream;
+      } catch (err) {
+        document.getElementById("camera-preview").innerHTML = "<p style='padding: 10px;'>🎥 Camera not accessible</p>";
+      }
+    }
+
+    window.onload = () => {
+      startCamera();
+      box.innerHTML = `<strong>Question:</strong> ${questions[current]}`;
+      speakAI(questions[current]);
+    };
+  </script>
+</body>
+</html>
+
+

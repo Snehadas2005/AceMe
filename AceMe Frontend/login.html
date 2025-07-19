@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AceMe - Login / Sign Up</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;800&family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        /* CSS for Login/Signup Page */
+
+        :root {
+            --primary-accent: #4EE0A0; /* Vibrant Teal/Mint Green */
+            --dark-text: #2C3E50; /* Dark blue-grey for headings/main text */
+            --light-bg: #F8FDFB; /* Very light background */
+            --card-bg: #FFFFFF; /* Pure white for cards, slightly brighter than main bg */
+            --muted-text: #7F8C8D; /* Medium grey for secondary text */
+            --border-light: #E0E0E0; /* Light grey for borders */
+            --button-hover-darken: #3CB371; /* Slightly darker teal for button hover */
+            --input-focus-border: #9FE2BF; /* Lighter teal for input focus */
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, var(--light-bg) 0%, #E0F2F7 100%); /* Subtle light gradient background */
+            color: var(--dark-text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box; /* Include padding in element's total width and height */
+        }
+
+        .auth-container {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); /* More pronounced shadow */
+            width: 100%;
+            max-width: 450px; /* Max width for the form container */
+            overflow: hidden; /* Ensures border-radius applies to children */
+            display: flex;
+            flex-direction: column;
+        }
+
+        .auth-header {
+            display: flex;
+            justify-content: center;
+            border-bottom: 1px solid var(--border-light);
+            background-color: #f5f5f5; /* Slightly different background for tabs */
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 18px 0;
+            text-align: center;
+            font-size: 1.1em;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            background-color: transparent;
+            color: var(--muted-text);
+            transition: color 0.3s ease, background-color 0.3s ease;
+            position: relative;
+        }
+
+        .tab-button.active {
+            color: var(--primary-accent);
+            font-weight: bold;
+            background-color: var(--card-bg);
+        }
+
+        .tab-button.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background-color: var(--primary-accent);
+            border-radius: 2px 2px 0 0;
+        }
+
+        .auth-form-content {
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.95em;
+            color: var(--dark-text);
+            font-weight: 500;
+        }
+
+        .form-group input[type="email"],
+        .form-group input[type="password"],
+        .form-group input[type="text"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            font-size: 1em;
+            color: var(--dark-text);
+            background-color: var(--light-bg); /* Light background for inputs */
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            box-sizing: border-box; /* Ensures padding doesn't add to width */
+        }
+
+        .form-group input[type="email"]:focus,
+        .form-group input[type="password"]:focus,
+        .form-group input[type="text"]:focus {
+            border-color: var(--input-focus-border);
+            box-shadow: 0 0 0 3px rgba(78, 224, 160, 0.2); /* Soft teal glow */
+            outline: none;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: -5px; /* Adjust spacing */
+            margin-bottom: 15px;
+        }
+
+        .form-actions a {
+            color: var(--muted-text);
+            text-decoration: none;
+            font-size: 0.9em;
+            transition: color 0.3s ease;
+        }
+
+        .form-actions a:hover {
+            color: var(--primary-accent);
+        }
+
+        .submit-button {
+            background-color: var(--primary-accent);
+            color: #fff;
+            padding: 15px 25px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            width: 100%;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .submit-button:hover {
+            background-color: var(--button-hover-darken);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .or-divider {
+            text-align: center;
+            margin: 20px 0;
+            color: var(--muted-text);
+            position: relative;
+        }
+
+        .or-divider::before,
+        .or-divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 40%;
+            height: 1px;
+            background-color: var(--border-light);
+        }
+
+        .or-divider::before {
+            left: 0;
+        }
+
+        .or-divider::after {
+            right: 0;
+        }
+
+        .social-login-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .social-login-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 20px;
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            background-color: var(--card-bg);
+            color: var(--dark-text);
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .social-login-button i {
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+
+        .social-login-button:hover {
+            background-color: #f0f0f0;
+            border-color: var(--primary-accent);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .error-message {
+            color: var(--score-low); /* Red for errors */
+            font-size: 0.9em;
+            margin-top: -10px;
+            margin-bottom: 10px;
+            text-align: left;
+            display: none; /* Hidden by default */
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 500px) {
+            .auth-container {
+                margin: 0 15px;
+            }
+            .auth-form-content {
+                padding: 25px;
+            }
+            .tab-button {
+                font-size: 1em;
+                padding: 15px 0;
+            }
+            .submit-button {
+                font-size: 1em;
+                padding: 12px 20px;
+            }
+            .social-login-button {
+                font-size: 0.9em;
+                padding: 10px 15px;
+            }
+            a.tab-button {
+  text-decoration: none;
+  color: inherit; /* keep text color consistent */
+}
+
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-header">
+            <button class="tab-button active" id="login-tab">Login</button>
+            <a class="tab-button" href="register.html" id="signup-tab">Sign Up</a>
+
+        </div>
+
+        <div class="auth-form-content">
+            <!-- Login Form -->
+            <form id="login-form" class="auth-form">
+                <h2>Welcome Back!</h2>
+                <div class="form-group">
+                    <label for="login-email">Email</label>
+                    <input type="email" id="login-email" placeholder="your.email@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" placeholder="••••••••" required>
+                </div>
+                <div class="form-actions">
+                    <label>
+                        <input type="checkbox"> Remember me
+                    </label>
+                    <a href="#">Forgot Password?</a>
+                </div>
+                <div id="login-error" class="error-message"></div>
+                <button type="submit" class="submit-button">Login</button>
+
+                <div class="or-divider">OR</div>
+
+                <div class="social-login-buttons">
+                    <button type="button" class="social-login-button">
+                        <i class="fab fa-google"></i> Continue with Google
+                    </button>
+                    <button type="button" class="social-login-button">
+                        <i class="fab fa-linkedin-in"></i> Continue with LinkedIn
+                    </button>
+                </div>
+            </form>
+
+            <!-- Sign Up Form -->
+            <form id="signup-form" class="auth-form" style="display: none;">
+                <h2>Create Your Account</h2>
+                <div class="form-group">
+                    <label for="signup-name">Full Name</label>
+                    <input type="text" id="signup-name" placeholder="John Doe" required>
+                </div>
+                <div class="form-group">
+                    <label for="signup-email">Email</label>
+                    <input type="email" id="signup-email" placeholder="your.email@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="signup-password">Password</label>
+                    <input type="password" id="signup-password" placeholder="••••••••" required>
+                </div>
+                <div class="form-group">
+                    <label for="signup-confirm-password">Confirm Password</label>
+                    <input type="password" id="signup-confirm-password" placeholder="••••••••" required>
+                </div>
+                <div id="signup-error" class="error-message"></div>
+                <button type="submit" class="submit-button">Sign Up</button>
+
+                <div class="or-divider">OR</div>
+
+                <div class="social-login-buttons">
+                    <button type="button" class="social-login-button">
+                        <i class="fab fa-google"></i> Sign Up with Google
+                    </button>
+                    <button type="button" class="social-login-button">
+                        <i class="fab fa-linkedin-in"></i> Sign Up with LinkedIn
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript for Login/Signup Page
+
+        const loginTab = document.getElementById('login-tab');
+        const signupTab = document.getElementById('signup-tab');
+        const loginForm = document.getElementById('login-form');
+        const signupForm = document.getElementById('signup-form');
+        const loginError = document.getElementById('login-error');
+        const signupError = document.getElementById('signup-error');
+
+        // Function to show error message
+        function showError(element, message) {
+            element.textContent = message;
+            element.style.display = 'block';
+        }
+
+        // Function to hide error message
+        function hideError(element) {
+            element.textContent = '';
+            element.style.display = 'none';
+        }
+
+        // Switch between Login and Sign Up forms
+        loginTab.addEventListener('click', () => {
+            loginTab.classList.add('active');
+            signupTab.classList.remove('active');
+            loginForm.style.display = 'flex'; // Use flex to maintain column layout
+            signupForm.style.display = 'none';
+            hideError(loginError);
+            hideError(signupError);
+        });
+
+        signupTab.addEventListener('click', () => {
+            signupTab.classList.add('active');
+            loginTab.classList.remove('active');
+            signupForm.style.display = 'flex'; // Use flex to maintain column layout
+            loginForm.style.display = 'none';
+            hideError(loginError);
+            hideError(signupError);
+        });
+
+        // Handle Login Form Submission
+        loginForm.addEventListener('submit', (event) => {
+            event.preventDefault(); // Prevent default form submission
+
+            hideError(loginError); // Clear previous errors
+
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value.trim();
+
+            if (!email || !password) {
+                showError(loginError, 'Please enter both email and password.');
+                return;
+            }
+
+            // Basic email format validation
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                showError(loginError, 'Please enter a valid email address.');
+                return;
+            }
+
+            // Placeholder for actual login logic
+            console.log('Login attempt:', { email, password });
+            // In a real application, you would send this to your backend for authentication.
+            // On successful login:
+           
+            window.location.href = 'start.html'; // Redirect to the next page
+        });
+
+        // Handle Sign Up Form Submission
+        signupForm.addEventListener('submit', (event) => {
+            event.preventDefault(); // Prevent default form submission
+
+            hideError(signupError); // Clear previous errors
+
+            const name = document.getElementById('signup-name').value.trim();
+            const email = document.getElementById('signup-email').value.trim();
+            const password = document.getElementById('signup-password').value.trim();
+            const confirmPassword = document.getElementById('signup-confirm-password').value.trim();
+
+            if (!name || !email || !password || !confirmPassword) {
+                showError(signupError, 'Please fill in all fields.');
+                return;
+            }
+
+            // Basic email format validation
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                showError(signupError, 'Please enter a valid email address.');
+                return;
+            }
+
+            if (password.length < 6) {
+                showError(signupError, 'Password must be at least 6 characters long.');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showError(signupError, 'Passwords do not match.');
+                return;
+            }
+
+            // Placeholder for actual signup logic
+            console.log('Sign Up attempt:', { name, email, password });
+            // In a real application, you would send this to your backend for user registration.
+            // On successful signup:
+            alert('Account created successfully! Redirecting to Resume Upload page.');
+            window.location.href = 'upload.html'; // Redirect to the next page
+        });
+    </script>
+</body>
+</html>

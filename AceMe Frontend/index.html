@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AceMe – Interview Assistant</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lottie-web@latest/build/player/lottie.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(to bottom right, #e0f7f4, #ffffff);
+      color: #222;
+    }
+
+    a {
+      text-decoration: none;
+    }
+
+    .container {
+      width: 90%;
+      max-width: 1200px;
+      margin: auto;
+    }
+
+    header {
+      padding: 20px 0;
+      background: transparent;
+    }
+
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-size: 32px;
+      font-weight: bold;
+    }
+
+    .logo span {
+      color: #33cc99;
+    }
+
+    nav a {
+      margin-left: 25px;
+      color: #333;
+      font-weight: 500;
+      position: relative;
+      transition: color 0.3s;
+    }
+
+    nav a:hover {
+      color: #33cc99;
+    }
+
+    nav .btn {
+      padding: 10px 18px;
+      background: #33cc99;
+      color: white;
+      border-radius: 25px;
+      font-weight: 600;
+      transition: background 0.3s;
+    }
+
+    nav .btn:hover {
+      background: #2ab98c;
+    }
+
+    .hero {
+      padding: 80px 0;
+    }
+
+    .hero-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 40px;
+    }
+
+    .text-content h1 {
+      font-size: 52px;
+      font-weight: 800;
+      line-height: 1.3;
+    }
+
+    .highlight {
+      border-bottom: 4px solid #33cc99;
+      display: inline-block;
+    }
+
+    .subtext {
+      margin-top: 20px;
+      font-size: 18px;
+      color: #555;
+      line-height: 1.5;
+    }
+
+    .cta-buttons {
+      margin-top: 30px;
+    }
+
+    
+    .cta-buttons .btn {
+      padding: 12px 26px;
+      margin-right: 15px;
+      font-size: 16px;
+      border-radius: 30px;
+      font-weight: 600;
+      display: inline-block;
+      transition: all 0.3s ease;
+    }
+
+    .primary {
+      background: #33cc99;
+      color: white;
+    }
+
+    .primary:hover {
+      background: #2ab98c;
+    }
+
+    .secondary {
+      border: 2px solid #33cc99;
+      color: #33cc99;
+      background: transparent;
+    }
+
+    .secondary:hover {
+      background: #e8f8f4;
+    }
+
+    .image-content img {
+      max-width: 430px;
+      width: 100%;
+      transition: transform 0.5s ease;
+      filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.1));
+    }
+
+    .image-content img:hover {
+      transform: scale(1.05) rotate(1deg);
+    }
+
+    .brands {
+      text-align: center;
+      margin: 60px 0;
+    }
+
+    .brands p {
+      font-weight: 600;
+      font-size: 20px;
+      margin-bottom: 20px;
+    }
+
+    .brand-logos img {
+      width: 100px;
+      margin: 0 15px;
+      opacity: 0.75;
+      transition: transform 0.3s;
+    }
+
+    .brand-logos img:hover {
+      transform: scale(1.1);
+      opacity: 1;
+    }
+
+    .benefits-section {
+      padding: 80px 20px;
+      background: #f4f8f7;
+    }
+
+    .benefits-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 40px;
+    }
+
+    .benefits-text {
+      flex: 1;
+    }
+
+    .benefits-text h2 {
+      font-size: 34px;
+      font-weight: 700;
+      margin-bottom: 20px;
+    }
+
+    .benefits-text ul {
+      list-style: none;
+    }
+
+    .benefits-text ul li {
+      margin: 10px 0;
+      font-size: 18px;
+      color: #444;
+    }
+
+    .benefits-image {
+      flex: 1;
+      text-align: center;
+    }
+
+    .benefits-image img {
+      max-width: 100%;
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .pricing-section {
+      padding: 80px 20px;
+      background: linear-gradient(to right, #d5f5ef, #ffffff);
+      text-align: center;
+    }
+
+    .pricing-section h2 {
+      font-size: 34px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .pricing-section p {
+      color: #666;
+      margin-bottom: 30px;
+    }
+
+    .toggle-btns {
+      margin-bottom: 30px;
+    }
+
+    .toggle {
+      padding: 10px 20px;
+      margin: 0 5px;
+      border: none;
+      background: #eee;
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .toggle.active {
+      background: #33cc99;
+      color: white;
+    }
+
+    .plans {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .plan-card {
+      background: rgba(255, 255, 255, 0.85);
+      border-radius: 15px;
+      padding: 30px 20px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+      width: 280px;
+      backdrop-filter: blur(10px);
+      transition: transform 0.3s;
+    }
+
+    .plan-card:hover {
+      transform: scale(1.05);
+       background: #33cc99;
+  color: white;
+  
+    }
+    .plan-card:hover h3,
+.plan-card:hover h1,
+.plan-card:hover ul li,
+.plan-card:hover p {
+  color: white;
+}
+.plan-card:hover button {
+  background: white;
+  color: #33cc99;
+}
+    
+
+    .plan-card.active {
+      border: 2px solid #33cc99;
+    }
+
+    .plan-card h3 {
+      font-size: 22px;
+      margin-bottom: 10px;
+    }
+
+    .plan-card h1 {
+      font-size: 36px;
+      margin: 10px 0;
+      color: #33cc99;
+    }
+
+    .plan-card ul {
+      list-style: none;
+      text-align: left;
+      margin: 20px 0;
+      padding: 0;
+    }
+
+    .plan-card ul li {
+      margin: 10px 0;
+      color: #333;
+      font-size: 16px;
+    }
+
+    .plan-card button {
+      background: #33cc99;
+      color: white;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 25px;
+      font-weight: bold;
+      cursor: pointer;
+      width: 100%;
+      transition: background 0.3s;
+    }
+
+    .plan-card button:hover {
+      background: #2bb987;
+    }
+
+    @media (max-width: 768px) {
+      .hero-content {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .benefits-container {
+        flex-direction: column;
+      }
+
+      .plans {
+        flex-direction: column;
+        align-items: center;
+      }
+    }
+    .brand-logos {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+
+.brand-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  min-width: 100px;
+}
+
+.brand-item img {
+  width: 60px;
+  opacity: 0.75;
+  transition: transform 0.3s, opacity 0.3s;
+}
+
+.brand-item img:hover {
+  transform: scale(1.1);
+  opacity: 1;
+}
+
+.brand-item span {
+  font-size: 14px;
+  font-weight: 500;
+  color: #444;
+}
+.brands {
+  padding: 60px 40px;
+  background-color: #f9f9f9;
+  text-align: center;
+}
+
+.brands p {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 30px;
+}
+
+.brand-logos {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.brand-item {
+  flex: 1 1 150px;
+  min-width: 120px;
+  max-width: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-item img {
+  width: 60px;
+  opacity: 0.8;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.brand-item img:hover {
+  transform: scale(1.1);
+  opacity: 1;
+}
+
+.brand-item span {
+  font-size: 14px;
+  color: #555;
+}
+
+<!-- Add this inside <style> block at the bottom or where styles are defined -->
+@media (max-width: 1024px) {
+  .hero-content, .benefits-container {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .text-content h1 {
+    font-size: 42px;
+  }
+
+  .subtext {
+    font-size: 16px;
+  }
+
+  .image-content img {
+    max-width: 300px;
+    margin: 0 auto;
+  }
+
+  .cta-buttons {
+    justify-content: center;
+  }
+
+  .benefits-text h2 {
+    font-size: 28px;
+  }
+
+  .benefits-text ul li {
+    font-size: 16px;
+  }
+
+  .plan-card {
+    width: 90%;
+    margin-bottom: 20px;
+  }
+
+  nav a {
+    font-size: 15px;
+    margin-left: 15px;
+  }
+
+  nav .btn {
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+
+  .logo {
+    font-size: 24px;
+  }
+
+  .pricing-section h2 {
+    font-size: 28px;
+  }
+}
+
+@media (max-width: 600px) {
+  .hero {
+    padding: 40px 0;
+  }
+
+  .text-content h1 {
+    font-size: 32px;
+  }
+
+  .cta-buttons .btn {
+    font-size: 14px;
+    padding: 10px 20px;
+    margin-bottom: 10px;
+    display: block;
+    width: 100%;
+  }
+
+  .image-content img {
+    max-width: 100%;
+  }
+
+  .nav {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  nav {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-top: 10px;
+  }
+
+  nav a {
+    margin: 5px 0;
+  }
+
+  .toggle-btns {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .plan-card h1 {
+    font-size: 28px;
+  }
+
+  footer {
+    padding: 30px 15px;
+  }
+}
+
+
+  </style>
+</head>
+
+
+<body>
+  <header>
+    <div class="container nav">
+      <div class="logo"><span>Ace</span>Me</div>
+      <nav>
+        <a href="index.html">Home</a>
+        
+        <a href="login.html">Login</a>
+        <a href="register.html" class="btn">Sign Up</a>
+        
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="container hero-content">
+      <div class="text-content">
+        <h1>We’re here to <br>Increase your <br><span class="highlight">Productivity</span></h1>
+        <p class="subtext">Ace Your Interview. Every Time with your<br> Personalized AI-powered<br> Designed to help you shine.</p>
+        <div class="cta-buttons">
+          <a href="login.html" class="btn primary">Try free trial</a>
+          <a href="#" class="btn secondary">▶ View Demo</a>
+        </div>
+      </div>
+      <div class="image-content">
+        <img src="assets/avatar.png" alt="AI Interview Assistant">
+      </div>
+    </div>
+  </section>
+
+
+
+  <!-- <section class="pricing-section">
+    <div class="container">
+      <h2>Choose Plan That’s Right For You</h2>
+      <p>Choose a plan that fits your preparation goals, feel free to contact us</p>
+      <div class="toggle-btns">
+        <button class="toggle active">Bill Monthly</button>
+        <button class="toggle">Bill Yearly</button>
+      </div>
+      <div class="plans">
+        <div class="plan-card">
+          <h3>Free</h3>
+          <p>Test the AI Interview tool</p>
+          <h1>$0</h1>
+          <ul>
+            <li>✔ 2 Mock Interviews</li>
+            <li>✔ Resume Upload</li>
+            <li>✔ Basic Feedback</li>
+            <li>✔ Email Support</li>
+          </ul>
+          <button>Signup for Free</button>
+        </div>
+        <div class="plan-card active">
+          <h3>Pro</h3>
+          <p>Unlock full AI features</p>
+          <h1>$8</h1>
+          <ul>
+            <li>✔ Unlimited Interviews</li>
+            <li>✔ Advanced Feedback</li>
+            <li>✔ Analytics Dashboard</li>
+            <li>✔ Priority Support</li>
+          </ul>
+          <button>Go Pro</button>
+        </div>
+        <div class="plan-card">
+          <h3>Business</h3>
+          <p>Team Hiring + Custom Tools</p>
+          <h1>$16</h1>
+          <ul>
+            <li>✔ All Pro Features</li>
+            <li>✔ Admin Dashboard</li>
+            <li>✔ Team Collaboration</li>
+            <li>✔ Custom AI Tuning</li>
+          </ul>
+          <button>Go Business</button>
+        </div>
+      </div>
+    </div>
+  </section> -->
+  <script>
+
+</script>
+<footer style="background: #e0f7f4; color:#33cc99; padding:40px 0; text-align:center; font-size:14px;">
+  <div class="container">
+    <p>© 2025 AceMe Inc. All rights reserved.</p>
+    <p><a href="#" style="color:#33cc99;">Privacy Policy</a> | <a href="#" style="color:#33cc99;">Terms of Service</a></p>
+  </div>
+</footer>
+</body>
+</html>

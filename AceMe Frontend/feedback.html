@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Interview Feedback – AceMe</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    :root {
+      --primary: #33cc99;
+      --dark: #222;
+      --light-bg: #f8f9fa;
+      --white: #fff;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(to bottom right, #e6f2f2, #ffffff);
+      color: var(--dark);
+    }
+
+    header {
+      background: transparent;
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1200px;
+      margin: auto;
+      flex-wrap: wrap;
+    }
+
+    .logo {
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .logo span {
+      color: var(--primary);
+    }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 15px;
+      margin-top: 10px;
+    }
+
+    nav a {
+      text-decoration: none;
+      color: var(--dark);
+      font-weight: 500;
+    }
+
+    nav .btn {
+      padding: 8px 16px;
+      background: var(--primary);
+      color: white;
+      border-radius: 8px;
+      text-decoration: none;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 40px auto;
+      padding: 20px;
+      background: var(--white);
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    }
+
+    .feedback-header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .feedback-header h1 {
+      font-size: 32px;
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    .score-box {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 30px;
+    }
+
+    .score-circle {
+      width: 130px;
+      height: 130px;
+      border-radius: 50%;
+      border: 6px solid var(--primary);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      font-size: 32px;
+      font-weight: bold;
+      color: var(--primary);
+      animation: pulse 1.5s infinite ease-in-out;
+    }
+
+    .score-circle p {
+      font-size: 14px;
+      color: #555;
+      margin-top: 5px;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); box-shadow: 0 0 10px #33cc9966; }
+      100% { transform: scale(1.05); box-shadow: 0 0 20px #33cc99aa; }
+    }
+
+    .feedback-body {
+      padding: 20px;
+    }
+
+    .feedback-body h2 {
+      margin-bottom: 15px;
+      font-size: 20px;
+      color: var(--dark);
+    }
+
+    ul.feedback-list {
+      list-style-type: none;
+      padding-left: 20px;
+      margin-bottom: 20px;
+    }
+
+    ul.feedback-list li {
+      margin-bottom: 10px;
+      position: relative;
+      padding-left: 20px;
+      color: #333;
+    }
+
+    ul.feedback-list li::before {
+      content: "✔";
+      color: var(--primary);
+      position: absolute;
+      left: 0;
+      font-size: 14px;
+    }
+
+    .improvement-box {
+      background: #f0f5f5;
+      padding: 15px 20px;
+      border-left: 4px solid var(--primary);
+      border-radius: 6px;
+      margin-bottom: 30px;
+      color: #444;
+    }
+
+    .btn-actions {
+      text-align: center;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    .btn-actions button {
+      background: var(--primary);
+      border: none;
+      color: white;
+      font-weight: 600;
+      padding: 12px 24px;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .btn-actions button:hover {
+      background: #2bb987;
+    }
+
+    @media (max-width: 768px) {
+      header {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      nav {
+        justify-content: center;
+        margin-top: 10px;
+      }
+
+      .score-circle {
+        width: 100px;
+        height: 100px;
+        font-size: 24px;
+      }
+
+      .feedback-header h1 {
+        font-size: 24px;
+      }
+
+      .feedback-body h2 {
+        font-size: 18px;
+      }
+
+      .btn-actions {
+        flex-direction: column;
+      }
+
+      .btn-actions button {
+        width: 100%;
+        max-width: 250px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo"><span>Ace</span>Me</div>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="login.html">Login</a>
+      <a href="register.html" class="btn">Sign Up</a>
+    </nav>
+  </header>
+
+  <!-- Feedback content for PDF -->
+  <main class="container" id="feedback-content">
+    <div class="feedback-header">
+      <h1>Your Interview Feedback</h1>
+    </div>
+
+    <div class="score-box">
+      <div class="score-circle">
+        <span id="score">0</span>
+        <p>Out of 100</p>
+      </div>
+    </div>
+
+    <div class="feedback-body">
+      <h2>Highlights</h2>
+      <ul class="feedback-list">
+        <li>Strong technical knowledge</li>
+        <li>Good communication skills</li>
+        <li>Well-structured responses</li>
+        <li>Maintained confident posture</li>
+      </ul>
+
+      <div class="improvement-box">
+        <strong>Suggestions:</strong><br>
+        Improve time management in coding problems and reduce filler words during explanation. Try to add real-world examples to your answers.
+      </div>
+    </div>
+  </main>
+
+  <div class="btn-actions">
+    <button onclick="location.href='studio.html'">Retry Interview</button>
+    <button onclick="downloadPDF()">Download PDF</button>
+  </div>
+
+  <script>
+    // Animate score
+    let score = 0;
+    const target = 88;
+    const scoreEl = document.getElementById("score");
+    const interval = setInterval(() => {
+      score++;
+      scoreEl.textContent = score;
+      if (score >= target) clearInterval(interval);
+    }, 25);
+
+    function downloadPDF() {
+      const element = document.getElementById('feedback-content');
+      const opt = {
+        margin:       0.5,
+        filename:     'Interview_Feedback.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+
+      html2pdf().set(opt).from(element).save();
+    }
+  </script>
+
+</body>
+</html>
+
