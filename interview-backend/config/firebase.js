@@ -1,21 +1,17 @@
 // backend/config/firebase.js
 const admin = require('firebase-admin');
-const { initializeApp } = require('firebase/app');
-const { getFirestore } = require('firebase/firestore');
-const { getStorage } = require('firebase/storage');
-const { getAuth } = require('firebase/auth');
 
 // Firebase Admin SDK initialization
 const serviceAccount = {
-  type: process.env.FIREBASE_ADMIN_TYPE,
+  type: process.env.FIREBASE_ADMIN_TYPE || "service_account",
   project_id: process.env.FIREBASE_ADMIN_PROJECT_ID,
   private_key_id: process.env.FIREBASE_ADMIN_PRIVATE_KEY_ID,
   private_key: process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, '\n'),
   client_email: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
   client_id: process.env.FIREBASE_ADMIN_CLIENT_ID,
-  auth_uri: process.env.FIREBASE_ADMIN_AUTH_URI,
-  token_uri: process.env.FIREBASE_ADMIN_TOKEN_URI,
-  auth_provider_x509_cert_url: `https://www.googleapis.com/oauth2/v1/certs`,
+  auth_uri: process.env.FIREBASE_ADMIN_AUTH_URI || "https://accounts.google.com/o/oauth2/auth",
+  token_uri: process.env.FIREBASE_ADMIN_TOKEN_URI || "https://oauth2.googleapis.com/token",
+  auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
   client_x509_cert_url: `https://www.googleapis.com/robot/v1/metadata/x509/${process.env.FIREBASE_ADMIN_CLIENT_EMAIL}`
 };
 
@@ -32,7 +28,7 @@ const adminDB = admin.firestore();
 const adminStorage = admin.storage();
 const adminAuth = admin.auth();
 
-// Utility functions for common operations
+// Utility functions for common Auth operations
 const firebaseUtils = {
   // Verify Firebase ID token
   async verifyIdToken(idToken) {
@@ -101,18 +97,18 @@ module.exports = {
   adminDB,
   adminStorage,
   adminAuth,
-  
+
   // Utility functions
   firebaseUtils,
-  
-  // Firebase config for client-side (to be sent to frontend)
+
+  // Firebase config for client-side (to be sent to frontend if needed)
   getClientConfig: () => ({
-    apiKey: "AIzaSyA6TiOM6JvE_f4ohOmCqqrI4WAzvjmhz0o",
-    authDomain: "aceme-7ec4f.firebaseapp.com",
-    projectId: "aceme-7ec4f",
-    storageBucket: "aceme-7ec4f.firebasestorage.app",
-    messagingSenderId: "1092971619463",
-    appId: "1:1092971619463:web:9d5f944aa34881bcbb0422",
-    measurementId: "G-39Y7L7MFPG"
+    apiKey: process.env.FIREBASE_API_KEY,
+    authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.FIREBASE_APP_ID,
+    measurementId: process.env.FIREBASE_MEASUREMENT_ID
   })
 };
