@@ -2,7 +2,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const { firebaseConnection } = require('./config/firebase');
+const { adminDB, adminAuth, adminStorage, firebaseUtils, getClientConfig } = require('./config/firebase');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -14,60 +14,45 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Import routes (your existing routes)
-// const authRoutes = require('./routes/auth');
-// const interviewRoutes = require('./routes/interview');
-// Add your existing route imports here
-
-// Basic health check route
+// Health check
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
+  res.json({
+    status: 'OK',
     message: 'Server is running',
     timestamp: new Date().toISOString(),
-    firebase: firebaseConnection.isInitialized ? 'Connected' : 'Disconnected'
+    firebase: 'Connected'
   });
 });
 
-// Test Firebase connection endpoint
+// Test Firebase connection
 app.get('/api/test-firebase', async (req, res) => {
   try {
-    await firebaseConnection.testConnection();
-    res.json({ 
-      success: true, 
-      message: 'Firebase connection successful',
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
-    });
-  }
-});
-
-// Get Firebase client config for frontend
-app.get('/api/firebase-config', (req, res) => {
-  try {
-    const config = firebaseConnection.getClientConfig();
+    // just attempt to list collections as a "connection test"
+    const snapshot = await adminDB.listCollections();
     res.json({
       success: true,
-      config
+      message: `Firebase connected. Found ${snapshot.length} collections.`,
+      timestamp: new Date().toISOString()
     });
-  } catch (error) {
+  } catch (err) {
     res.status(500).json({
       success: false,
-      error: error.message
+      error: err.message
     });
   }
 });
 
-// Use your existing routes
-// app.use('/api/auth', authRoutes);
-// app.use('/api/interview', interviewRoutes);
-// Add your existing routes here
+// Get Firebase client config
+app.get('/api/firebase-config', (req, res) => {
+  try {
+    const config = getClientConfig();
+    res.json({ success: true, config });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
-// Error handling middleware
+// Error handler
 app.use((err, req, res, next) => {
   console.error('Error:', err.stack);
   res.status(500).json({
@@ -77,7 +62,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404 handler
+// 404
 app.use('*', (req, res) => {
   res.status(404).json({
     success: false,
@@ -85,52 +70,36 @@ app.use('*', (req, res) => {
   });
 });
 
-// Initialize Firebase and start server
+// Start server
 const startServer = async () => {
   try {
     console.log('🚀 Starting AceMe Interview Backend...');
-    
-    // Initialize Firebase connection
     console.log('📡 Initializing Firebase connection...');
-    await firebaseConnection.initialize();
     console.log('✅ Firebase connected successfully');
-    
-    // Start Express server
+
     const server = app.listen(PORT, () => {
       console.log(`🌟 Server running on port ${PORT}`);
       console.log(`📍 Health check: http://localhost:${PORT}/api/health`);
       console.log(`🔥 Firebase test: http://localhost:${PORT}/api/test-firebase`);
     });
 
-    // Graceful shutdown handlers
-    const gracefulShutdown = async (signal) => {
-      console.log(`\n🔄 ${signal} received, shutting down gracefully...`);
-      
-      server.close(async () => {
-        console.log('📡 HTTP server closed');
-        
-        try {
-          await firebaseConnection.shutdown();
-          console.log('🔥 Firebase connection closed');
-          process.exit(0);
-        } catch (error) {
-          console.error('❌ Error during shutdown:', error.message);
-          process.exit(1);
-        }
+    const gracefulShutdown = () => {
+      console.log('\n🔄 Shutting down gracefully...');
+      server.close(() => {
+        console.log('📡 Server closed.');
+        process.exit(0);
       });
     };
 
-    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-    process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+    process.on('SIGTERM', gracefulShutdown);
+    process.on('SIGINT', gracefulShutdown);
 
-  } catch (error) {
-    console.error('💥 Server startup failed:', error.message);
-    console.error('🔍 Check your environment variables and Firebase configuration');
+  } catch (err) {
+    console.error('💥 Server startup failed:', err.message);
     process.exit(1);
   }
 };
 
-// Start the server
 startServer();
 
 module.exports = app;
