@@ -1,0 +1,261 @@
+// backend/config/firebase.js
+const admin = require('firebase-admin');
+
+class FirebaseConnection {
+  constructor() {
+    this.db = null;
+    this.auth = null;
+    this.storage = null;
+    this.isInitialized = false;
+  }
+
+  // Initialize Firebase Admin SDK
+  async initialize() {
+    try {
+      if (admin.apps.length === 0) {
+        // Validate required environment variables
+        this.validateEnvironmentVariables();
+
+        const serviceAccount = {
+          type: "service_account",
+          project_id: process.env.FIREBASE_PROJECT_ID,
+          private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
+          private_key: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+          client_email: process.env.FIREBASE_CLIENT_EMAIL,
+          client_id: process.env.FIREBASE_CLIENT_ID,
+          auth_uri: "https://accounts.google.com/o/oauth2/auth",
+          token_uri: "https://oauth2.googleapis.com/token",
+          auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
+          client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL
+        };
+
+        admin.initializeApp({
+          credential: admin.credential.cert(serviceAccount),
+          storageBucket: process.env.FIREBASE_STORAGE_BUCKET
+        });
+
+        // Initialize service instances
+        this.db = admin.firestore();
+        this.auth = admin.auth();
+        this.storage = admin.storage();
+        this.isInitialized = true;
+
+        console.log('✅ Firebase Admin SDK initialized successfully');
+        
+        // Test the connection
+        await this.testConnection();
+        
+        return true;
+      } else {
+        console.log('⚡ Firebase already initialized');
+        this.db = admin.firestore();
+        this.auth = admin.auth();
+        this.storage = admin.storage();
+        this.isInitialized = true;
+        return true;
+      }
+    } catch (error) {
+      console.error('❌ Firebase initialization failed:', error.message);
+      throw new Error(`Firebase initialization failed: ${error.message}`);
+    }
+  }
+
+  // Validate required environment variables
+  validateEnvironmentVariables() {
+    const required = [
+      'FIREBASE_PROJECT_ID',
+      'FIREBASE_PRIVATE_KEY_ID',
+      'FIREBASE_PRIVATE_KEY',
+      'FIREBASE_CLIENT_EMAIL',
+      'FIREBASE_CLIENT_ID',
+      'FIREBASE_CLIENT_X509_CERT_URL',
+      'FIREBASE_STORAGE_BUCKET'
+    ];
+
+    const missing = required.filter(key => !process.env[key]);
+    
+    if (missing.length > 0) {
+      throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
+    }
+  }
+
+  // Test database connection
+  async testConnection() {
+    try {
+      if (!this.db) {
+        throw new Error('Database not initialized');
+      }
+
+      // Test write operation
+      const testDoc = this.db.collection('_connection_test').doc('test');
+      await testDoc.set({
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        status: 'connected',
+        message: 'Database connection successful'
+      });
+
+      // Test read operation
+      const doc = await testDoc.get();
+      if (!doc.exists) {
+        throw new Error('Test document not found');
+      }
+
+      // Clean up test document
+      await testDoc.delete();
+
+      console.log('✅ Database connection test passed');
+      return true;
+    } catch (error) {
+      console.error('❌ Database connection test failed:', error.message);
+      throw new Error(`Database connection failed: ${error.message}`);
+    }
+  }
+
+  // Get Firestore instance
+  getFirestore() {
+    if (!this.isInitialized) {
+      throw new Error('Firebase not initialized. Call initialize() first.');
+    }
+    return this.db;
+  }
+
+  // Get Firebase Auth instance
+  getAuth() {
+    if (!this.isInitialized) {
+      throw new Error('Firebase not initialized. Call initialize() first.');
+    }
+    return this.auth;
+  }
+
+  // Get Firebase Storage instance
+  getStorage() {
+    if (!this.isInitialized) {
+      throw new Error('Firebase not initialized. Call initialize() first.');
+    }
+    return this.storage;
+  }
+
+  // Utility methods for common database operations
+  async createDocument(collection, docId, data) {
+    try {
+      const docRef = this.db.collection(collection).doc(docId);
+      await docRef.set({
+        ...data,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      return docRef;
+    } catch (error) {
+      throw new Error(`Error creating document: ${error.message}`);
+    }
+  }
+
+  async getDocument(collection, docId) {
+    try {
+      const doc = await this.db.collection(collection).doc(docId).get();
+      if (!doc.exists) {
+        return null;
+      }
+      return { id: doc.id, ...doc.data() };
+    } catch (error) {
+      throw new Error(`Error getting document: ${error.message}`);
+    }
+  }
+
+  async updateDocument(collection, docId, data) {
+    try {
+      const docRef = this.db.collection(collection).doc(docId);
+      await docRef.update({
+        ...data,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      return docRef;
+    } catch (error) {
+      throw new Error(`Error updating document: ${error.message}`);
+    }
+  }
+
+  async deleteDocument(collection, docId) {
+    try {
+      await this.db.collection(collection).doc(docId).delete();
+      return true;
+    } catch (error) {
+      throw new Error(`Error deleting document: ${error.message}`);
+    }
+  }
+
+  async getCollection(collection, limit = 100) {
+    try {
+      const snapshot = await this.db.collection(collection).limit(limit).get();
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+      throw new Error(`Error getting collection: ${error.message}`);
+    }
+  }
+
+  // Authentication utility methods
+  async verifyIdToken(idToken) {
+    try {
+      const decodedToken = await this.auth.verifyIdToken(idToken);
+      return decodedToken;
+    } catch (error) {
+      throw new Error(`Invalid token: ${error.message}`);
+    }
+  }
+
+  async createCustomToken(uid, additionalClaims = {}) {
+    try {
+      const customToken = await this.auth.createCustomToken(uid, additionalClaims);
+      return customToken;
+    } catch (error) {
+      throw new Error(`Error creating custom token: ${error.message}`);
+    }
+  }
+
+  async getUserByEmail(email) {
+    try {
+      const userRecord = await this.auth.getUserByEmail(email);
+      return userRecord;
+    } catch (error) {
+      throw new Error(`Error fetching user: ${error.message}`);
+    }
+  }
+
+  // Get client configuration for frontend
+  getClientConfig() {
+    return {
+      apiKey: process.env.FIREBASE_API_KEY,
+      authDomain: `${process.env.FIREBASE_PROJECT_ID}.firebaseapp.com`,
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+      messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+      appId: process.env.FIREBASE_APP_ID,
+      measurementId: process.env.FIREBASE_MEASUREMENT_ID
+    };
+  }
+
+  // Graceful shutdown
+  async shutdown() {
+    try {
+      await admin.app().delete();
+      console.log('🔥 Firebase connection closed gracefully');
+    } catch (error) {
+      console.error('Error during Firebase shutdown:', error.message);
+    }
+  }
+}
+
+// Create singleton instance
+const firebaseConnection = new FirebaseConnection();
+
+module.exports = {
+  firebaseConnection,
+  admin,
+  
+  // Legacy exports for backward compatibility
+  initializeFirebase: () => firebaseConnection.initialize(),
+  getFirestore: () => firebaseConnection.getFirestore(),
+  getAuth: () => firebaseConnection.getAuth(),
+  getStorage: () => firebaseConnection.getStorage(),
+  testConnection: () => firebaseConnection.testConnection()
+};
