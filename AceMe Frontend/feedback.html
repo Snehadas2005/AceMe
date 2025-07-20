@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Interview Feedback – AceMe</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/feedback.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+
+  <header>
+    <div class="logo"><span>Ace</span>Me</div>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="login.html">Login</a>
+      <a href="register.html" class="btn">Sign Up</a>
+    </nav>
+  </header>
+
+  <main class="container" id="feedback-content">
+    <div class="feedback-header">
+      <h1>Your Interview Feedback</h1>
+    </div>
+
+    <div class="score-box">
+      <div class="score-circle">
+        <span id="score">0</span>
+        <p>Out of 100</p>
+      </div>
+    </div>
+
+    <div class="feedback-body">
+      <h2>Highlights</h2>
+      <ul class="feedback-list">
+        <li>Strong technical knowledge</li>
+        <li>Good communication skills</li>
+        <li>Well-structured responses</li>
+        <li>Maintained confident posture</li>
+      </ul>
+
+      <div class="improvement-box">
+        <strong>Suggestions:</strong><br>
+        Improve time management in coding problems and reduce filler words during explanation. Try to add real-world examples to your answers.
+      </div>
+    </div>
+  </main>
+
+  <div class="btn-actions">
+    <button onclick="location.href='studio.html'">Retry Interview</button>
+    <button onclick="downloadPDF()">Download PDF</button>
+  </div>
+
+  <script>
+    // Animate score
+    let score = 0;
+    const target = 88;
+    const scoreEl = document.getElementById("score");
+    const interval = setInterval(() => {
+      score++;
+      scoreEl.textContent = score;
+      if (score >= target) clearInterval(interval);
+    }, 25);
+
+    function downloadPDF() {
+      const element = document.getElementById('feedback-content');
+      const opt = {
+        margin: 0.5,
+        filename: 'Interview_Feedback.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+      html2pdf().set(opt).from(element).save();
+    }
+  </script>
+
+</body>
+</html>
+
