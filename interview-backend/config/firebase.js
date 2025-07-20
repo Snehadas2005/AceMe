@@ -1,4 +1,25 @@
 const admin = require('firebase-admin');
+require('dotenv').config(); // Make sure this is at the top
+
+console.log('🔍 Debug: Environment variables check:');
+console.log('FIREBASE_ADMIN_PROJECT_ID:', process.env.FIREBASE_ADMIN_PROJECT_ID ? 'SET' : 'NOT SET');
+console.log('FIREBASE_ADMIN_CLIENT_EMAIL:', process.env.FIREBASE_ADMIN_CLIENT_EMAIL ? 'SET' : 'NOT SET');
+console.log('FIREBASE_ADMIN_PRIVATE_KEY:', process.env.FIREBASE_ADMIN_PRIVATE_KEY ? 'SET (length: ' + process.env.FIREBASE_ADMIN_PRIVATE_KEY.length + ')' : 'NOT SET');
+
+// Validate required environment variables
+const requiredEnvVars = [
+  'FIREBASE_ADMIN_PROJECT_ID',
+  'FIREBASE_ADMIN_PRIVATE_KEY_ID', 
+  'FIREBASE_ADMIN_PRIVATE_KEY',
+  'FIREBASE_ADMIN_CLIENT_EMAIL',
+  'FIREBASE_ADMIN_CLIENT_ID'
+];
+
+const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+if (missingVars.length > 0) {
+  console.error('❌ Missing required environment variables:', missingVars);
+  throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
+}
 
 // Firebase Admin SDK initialization
 const serviceAccount = {
@@ -14,11 +35,20 @@ const serviceAccount = {
   client_x509_cert_url: `https://www.googleapis.com/robot/v1/metadata/x509/${process.env.FIREBASE_ADMIN_CLIENT_EMAIL}`
 };
 
+// Debug: Check if project_id is properly set
+console.log('📋 Service Account project_id:', serviceAccount.project_id);
+
 if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-    storageBucket: process.env.FIREBASE_STORAGE_BUCKET || 'aceme-7ec4f.appspot.com'
-  });
+  try {
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+      storageBucket: process.env.FIREBASE_STORAGE_BUCKET || 'aceme-7ec4f.appspot.com'
+    });
+    console.log('✅ Firebase Admin initialized successfully');
+  } catch (error) {
+    console.error('❌ Firebase Admin initialization failed:', error.message);
+    throw error;
+  }
 }
 
 const adminDB = admin.firestore();

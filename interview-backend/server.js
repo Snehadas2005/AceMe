@@ -1,5 +1,5 @@
-// interview-backend/server.js
-require('dotenv').config();
+require('dotenv').config(); // Move this to the very top
+
 const express = require('express');
 const cors = require('cors');
 const { adminDB, adminAuth, adminStorage, firebaseUtils, getClientConfig } = require('./config/firebase');
@@ -27,7 +27,6 @@ app.get('/api/health', (req, res) => {
 // Test Firebase connection
 app.get('/api/test-firebase', async (req, res) => {
   try {
-    // just attempt to list collections as a "connection test"
     const snapshot = await adminDB.listCollections();
     res.json({
       success: true,
@@ -75,7 +74,9 @@ const startServer = async () => {
   try {
     console.log('🚀 Starting AceMe Interview Backend...');
     console.log('📡 Initializing Firebase connection...');
-    console.log('✅ Firebase connected successfully');
+
+    const collections = await adminDB.listCollections();
+    console.log(`✅ Firebase connected successfully. Found ${collections.length} collections.`);
 
     const server = app.listen(PORT, () => {
       console.log(`🌟 Server running on port ${PORT}`);
@@ -83,21 +84,67 @@ const startServer = async () => {
       console.log(`🔥 Firebase test: http://localhost:${PORT}/api/test-firebase`);
     });
 
-    const gracefulShutdown = () => {
-      console.log('\n🔄 Shutting down gracefully...');
-      server.close(() => {
-        console.log('📡 Server closed.');
-        process.exit(0);
-      });
-    };
+    // Handle port already in use error
+    server.on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        console.log(`❌ Port ${PORT} is already in use`);
+        console.log('💡 Trying to find an available port...');
+        
+        // Try ports from 5001 to 5010
+        for (let port = 5001; port <= 5010; port++) {
+          try {
+            const newServer = app.listen(port, () => {
+              console.log(`🌟 Server running on port ${port}`);
+              console.log(`📍 Health check: http://localhost:${port}/api/health`);
+              console.log(`🔥 Firebase test: http://localhost:${port}/api/test-firebase`);
+            });
+            
+            newServer.on('error', (portErr) => {
+              if (portErr.code === 'EADDRINUSE' && port < 5010) {
+                // Continue to next port
+                return;
+              } else if (portErr.code === 'EADDRINUSE') {
+                console.error('❌ No available ports found. Please free up a port or specify a different one.');
+                process.exit(1);
+              }
+            });
+            
+            // If we get here, the server started successfully
+            setupGracefulShutdown(newServer);
+            break;
+            
+          } catch (portError) {
+            if (port === 5010) {
+              console.error('❌ No available ports found. Please free up a port or specify a different one.');
+              process.exit(1);
+            }
+          }
+        }
+      } else {
+        console.error('💥 Server startup failed:', err.message);
+        process.exit(1);
+      }
+    });
 
-    process.on('SIGTERM', gracefulShutdown);
-    process.on('SIGINT', gracefulShutdown);
+    setupGracefulShutdown(server);
 
   } catch (err) {
     console.error('💥 Server startup failed:', err.message);
     process.exit(1);
   }
+};
+
+const setupGracefulShutdown = (server) => {
+  const gracefulShutdown = () => {
+    console.log('\n🔄 Shutting down gracefully...');
+    server.close(() => {
+      console.log('📡 Server closed.');
+      process.exit(0);
+    });
+  };
+
+  process.on('SIGTERM', gracefulShutdown);
+  process.on('SIGINT', gracefulShutdown);
 };
 
 startServer();
