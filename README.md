@@ -1,45 +1,63 @@
 ```
-interview-backend/
-├── package.json
-├── .env
-├── .env.example
+aceme-interview/
+├── backend/
+│   ├── app.py                 # Main Flask application
+│   ├── config.py              # Configuration settings
+│   ├── requirements.txt       # Python dependencies
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── ml_models.py       # ML model loading and inference
+│   │   └── data_models.py     # Data structures and validation
+│   ├── routes/
+│   │   ├── __init__.py
+│   │   ├── auth.py            # Authentication routes
+│   │   ├── interview.py       # Interview-related routes
+│   │   └── upload.py          # File upload routes
+│   ├── services/
+│   │   ├── __init__.py
+│   │   ├── auth_service.py    # Authentication logic
+│   │   ├── interview_service.py # Interview processing
+│   │   ├── ml_service.py      # ML model services
+│   │   └── file_service.py    # File processing services
+│   ├── utils/
+│   │   ├── __init__.py
+│   │   ├── helpers.py         # Utility functions
+│   │   └── validators.py      # Input validation
+│   └── uploads/               # Temporary file storage
+│       └── .gitkeep
+├── frontend/
+│   ├── index.html             # Landing page
+│   ├── login.html
+│   ├── register.html
+│   ├── start.html
+│   ├── studio.html
+│   ├── feedback.html
+│   ├── css/
+│   │   ├── styles.css         # Global styles
+│   │   ├── start.css
+│   │   ├── studio.css
+│   │   └── feedback.css
+│   └── js/
+│       ├── firebase-config.js
+│       ├── authAPI.js
+│       ├── interviewAPI.js
+│       ├── storage.js
+│       └── utils.js
+├── ml_models/                 # Pre-trained models directory
+│   ├── grammar_correction/
+│   └── speech_analysis/
+├── data/
+│   ├── resumes/              # Processed resume storage
+│   └── interviews/           # Interview data storage
+├── tests/
+│   ├── test_auth.py
+│   ├── test_interview.py
+│   └── test_ml_models.py
+├── scripts/
+│   ├── setup_models.py       # Download and setup ML models
+│   └── init_db.py           # Database initialization
+├── .env                      # Environment variables
 ├── .gitignore
-├── server.js                          # Main server file with Express setup
-├── config/
-│   ├── firebase.js                    # Firebase Admin SDK configuration
-│   └── database.js                    # Database connection settings
-├── middleware/
-│   ├── auth.js                        # JWT/Firebase authentication middleware
-│   ├── upload.js                      # File upload middleware (multer)
-│   └── validation.js                  # Request validation middleware
-├── models/
-│   ├── User.js                        # User data model
-│   ├── Interview.js                   # Interview session model
-│   ├── Question.js                    # Question model
-│   └── Report.js                      # Interview report model
-├── routes/
-│   ├── auth.js                        # Authentication routes
-│   ├── interview.js                   # Interview management routes
-│   ├── questions.js                   # Question generation routes
-│   ├── analysis.js                    # Analysis and reporting routes
-│   └── resume.js                      # Resume upload and parsing routes
-├── services/
-│   ├── audioProcessor.js              # Google Cloud Speech-to-Text integration
-│   ├── nlpAnalyzer.js                 # Natural Language Processing analysis
-│   ├── reportGenerator.js             # Interview report generation
-│   ├── questionGenerator.js           # AI question generation
-│   ├── resumeParser.js                # Resume parsing (PDF/DOCX)
-│   └── websocket.js                   # WebSocket connection management
-├── utils/
-│   ├── helpers.js                     # Common utility functions
-│   ├── constants.js                   # Application constants
-│   └── interviewTimer.js              # Interview session timing utilities
-├── uploads/
-│   └── resumes/                       # Resume file storage
-├── temp/                              # Temporary files (audio processing)
-├── logs/                              # Application logs
-└── tests/                             # Test files
-    ├── unit/
-    ├── integration/
-    └── fixtures/
+├── README.md
+└── run.py                    # Application entry point
 ```
