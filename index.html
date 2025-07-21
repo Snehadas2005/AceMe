@@ -1,69 +1,135 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AceMe – Interview Assistant</title>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="style.css" />
-    <script src="https://unpkg.com/lottie-web@latest/build/player/lottie.min.js"></script>
-  </head>
-
-  <body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AceMe - AI-Powered Interview Platform</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main>
     <header>
-      <div class="container nav">
-        <div class="logo"><span>Ace</span>Me</div>
-        <nav>
-          <a href="index.html">Home</a>
-          <a href="login.html">Login</a>
-          <a href="register.html" class="btn">Sign Up</a>
-        </nav>
+      <div class="container">
+        <div class="nav">
+          <div class="logo">Ace<span>Me</span></div>
+          <nav>
+            <a href="#home">Home</a>
+            <a href="#features">Features</a>
+            
+            <a href="#about">About</a>
+            <a href="login.html" class="btn">Get Started</a>
+          </nav>
+        </div>
       </div>
     </header>
 
-    <section class="hero">
-      <div class="container hero-content">
-        <div class="text-content">
-          <h1>
-            We’re here to <br />Increase your <br /><span class="highlight"
-              >Productivity</span
-            >
-          </h1>
-          <p class="subtext">
-            Ace Your Interview. Every Time with your<br />
-            Personalized AI-powered<br />
-            Designed to help you shine.
-          </p>
-          <div class="cta-buttons">
-            <a href="login.html" class="btn primary">Try free trial</a>
-            <a href="#" class="btn secondary">▶ View Demo</a>
+    <section class="hero" id="home">
+      <div class="container">
+        <div class="hero-content">
+          <div class="text-content">
+            <h1>Master Your <span class="highlight">Interviews</span> with AI</h1>
+            <p class="subtext">Practice with our AI-powered interview platform and boost your confidence with personalized feedback and real-time analysis.</p>
+            <div class="cta-buttons">
+              <a href="login.html" class="btn primary">Start Practicing</a>
+              <a href="#" class="btn secondary">Watch Demo</a>
+            </div>
           </div>
-        </div>
-        <div class="image-content">
-          <img src="assets/avatar.png" alt="AI Interview Assistant" />
+          <div class="image-content">
+            <img src="https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="AI Interview Platform">
+          </div>
         </div>
       </div>
     </section>
 
-    <footer
-      style="
-        background: #e0f7f4;
-        color: #33cc99;
-        padding: 40px 0;
-        text-align: center;
-        font-size: 14px;
-      "
-    >
+    <section class="brands">
       <div class="container">
-        <p>© 2025 AceMe Inc. All rights reserved.</p>
-        <p>
-          <a href="#" style="color: #33cc99">Privacy Policy</a> |
-          <a href="#" style="color: #33cc99">Terms of Service</a>
-        </p>
+        <p>Trusted by top companies and professionals</p>
+        <div class="brand-logos">
+          <div class="brand-item">
+            <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg" alt="Google">
+            <span>Google</span>
+          </div>
+          <div class="brand-item">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg" alt="Microsoft" />
+            <span>Microsoft</span>
+          </div>
+
+          <div class="brand-item">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg" alt="Amazon" />
+            <span>Amazon</span>
+          </div>
+
+          <div class="brand-item">
+            <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/apple/apple-original.svg" alt="Apple">
+            <span>Apple</span>
+          </div>
+        </div>
       </div>
-    </footer>
-  </body>
+    </section>
+
+    <section class="benefits-section" id="features">
+      <div class="container">
+        <div class="benefits-container">
+          <div class="benefits-text">
+            <h2>Why Choose AceMe?</h2>
+            <ul>
+              <li>✓ AI-powered real-time feedback</li>
+              <li>✓ Industry-specific interview questions</li>
+              <li>✓ Performance analytics and insights</li>
+              <li>✓ Video recording and playback</li>
+              <li>✓ Personalized improvement suggestions</li>
+            </ul>
+          </div>
+          <div class="benefits-image">
+            <img src="https://images.unsplash.com/photo-1551434678-e076c223a692?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Benefits">
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+  </main>
+
+  <footer id="about">
+    <div class="footer-content">
+      <div class="footer-section">
+        <h3>AceMe</h3>
+        <p>AI-powered interview platform helping professionals ace their dream jobs with confidence and skills.</p>
+        <div class="social-links">
+          <a href="#">f</a>
+          <a href="#">t</a>
+          <a href="#">in</a>
+          <a href="#">ig</a>
+        </div>
+      </div>
+      <div class="footer-section">
+        <h3>Product</h3>
+        <a href="#">Features</a>
+        <a href="#">Pricing</a>
+        <a href="#">API</a>
+        <a href="#">Documentation</a>
+      </div>
+      <div class="footer-section">
+        <h3>Company</h3>
+        <a href="#">About Us</a>
+        <a href="#">Careers</a>
+        <a href="#">Press</a>
+        <a href="#">Contact</a>
+      </div>
+      <div class="footer-section" id="contact">
+        <h3>Support</h3>
+        <a href="#">Help Center</a>
+        <a href="#">Community</a>
+        <a href="#">Status</a>
+        <a href="#">Privacy Policy</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2025 AceMe. All rights reserved. Built with ❤ for better interviews.</p>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
 </html>
