@@ -1,6 +1,6 @@
 ```
 aceme-interview/
-├── backend/
+├── interview-backend/
 │   ├── app.py                 # Main Flask application
 │   ├── config.py              # Configuration settings
 │   ├── requirements.txt       # Python dependencies
@@ -25,7 +25,7 @@ aceme-interview/
 │   │   └── validators.py      # Input validation
 │   └── uploads/               # Temporary file storage
 │       └── .gitkeep
-├── frontend/
+├── interview-frontend/
 │   ├── index.html             # Landing page
 │   ├── login.html
 │   ├── register.html
