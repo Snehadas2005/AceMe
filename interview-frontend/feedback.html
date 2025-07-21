@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Interview Feedback – AceMe</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/feedback.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+
+  <header>
+    <div class="logo"><span>Ace</span>Me</div>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="login.html">Login</a>
+      <a href="register.html" class="btn">Sign Up</a>
+    </nav>
+  </header>
+
+  <main class="container" id="feedback-content">
+    <div class="feedback-header">
+      <h1>Your Interview Feedback</h1>
+    </div>
+
+    <div class="score-box">
+      <div class="score-circle">
+        <span id="score">0</span>
+        <p>Out of 100</p>
+      </div>
+    </div>
+
+    <div class="feedback-body">
+      <h2>Highlights</h2>
+      <ul class="feedback-list" id="highlight-list">
+        <li>Loading...</li>
+      </ul>
+
+      <div class="improvement-box" id="suggestion-box">
+        <strong>Suggestions:</strong><br>
+        Loading suggestions...
+      </div>
+    </div>
+  </main>
+
+  <div class="btn-actions">
+    <button onclick="location.href='studio.html'">Retry Interview</button>
+    <button onclick="downloadPDF()">Download PDF</button>
+  </div>
+
+  <script src="js/firebase-config.js"></script>
+  <script src="js/interviewAPI.js"></script>
+  <script src="js/storage.js"></script>
+
+  <script>
+    // Animate and populate feedback from backend
+    window.onload = async () => {
+      const scoreEl = document.getElementById("score");
+      const highlightList = document.getElementById("highlight-list");
+      const suggestionBox = document.getElementById("suggestion-box");
+
+      try {
+        const res = await interviewAPI.getResults();
+        if (!res.success) throw new Error(res.message || "Could not fetch results");
+
+        let currentScore = 0;
+        const targetScore = res.score || 0;
+
+        const interval = setInterval(() => {
+          scoreEl.textContent = currentScore++;
+          if (currentScore > targetScore) clearInterval(interval);
+        }, 20);
+
+        highlightList.innerHTML = res.highlights.map(h => `<li>${h}</li>`).join('');
+        suggestionBox.innerHTML = `<strong>Suggestions:</strong><br>${res.suggestions || "No suggestions available."}`;
+      } catch (err) {
+        console.error("❌ Failed to load feedback:", err);
+        scoreEl.textContent = "0";
+        highlightList.innerHTML = "<li>Could not load highlights</li>";
+        suggestionBox.innerHTML = "<strong>Suggestions:</strong><br>Could not load suggestions.";
+      }
+    };
+
+    function downloadPDF() {
+      const element = document.getElementById('feedback-content');
+      const opt = {
+        margin: 0.5,
+        filename: 'Interview_Feedback.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+      html2pdf().set(opt).from(element).save();
+    }
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Interview – AceMe</title>
+  <link rel="stylesheet" href="css/start.css" />
+</head>
+<body>
+
+  <div class="container">
+    <h1>Get Interview Ready 🚀</h1>
+    <p style="text-align:center;">Upload your resume, review the rules, and start your mock interview experience with confidence.</p>
+
+    <label for="resumeInput">Upload Resume (PDF/DOC):</label>
+    <div class="upload-area" id="uploadArea">
+      <p>Drag & drop your resume here or click to select</p>
+      <input type="file" id="resumeInput" accept=".pdf,.doc,.docx,.txt" hidden>
+    </div>
+
+    <div class="instructions">
+      <h2>📌 Important Instructions</h2>
+      <ul>
+        <li>Ensure your camera and microphone are working properly.</li>
+        <li>Find a quiet and well-lit environment before starting.</li>
+        <li>Speak clearly and maintain eye contact with the camera.</li>
+        <li>Stay within the time limit for each question.</li>
+        <li>Do not close the tab or refresh once the interview starts.</li>
+      </ul>
+    </div>
+
+    <div class="terms">
+      <label>
+        <input type="checkbox" id="agree">
+        I have read and agree to the <strong>terms and conditions</strong>. I understand this interview is for practice purposes only.
+      </label>
+    </div>
+
+    <div class="start-btn">
+      <button id="startBtn" disabled>Start AI Interview</button>
+    </div>
+  </div>
+
+  <footer>
+    &copy; 2025 AceMe AI – All Rights Reserved.
+  </footer>
+
+  <script src="js/firebase-config.js"></script>
+  <script src="js/authAPI.js"></script>
+  <script src="js/interviewAPI.js"></script>
+  <script src="js/storage.js"></script>
+
+  <script>
+    const checkbox = document.getElementById("agree");
+    const startBtn = document.getElementById("startBtn");
+    const uploadArea = document.getElementById("uploadArea");
+    const resumeInput = document.getElementById("resumeInput");
+
+    let uploadedResumeId = null;
+
+    // 🔐 Require login
+    const user = storage.getUser();
+    if (!user) {
+      alert('Please login first');
+      window.location.href = 'login.html';
+    }
+
+    checkbox.addEventListener("change", () => {
+      startBtn.disabled = !checkbox.checked || !uploadedResumeId;
+    });
+
+    uploadArea.addEventListener("click", () => resumeInput.click());
+
+    uploadArea.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      uploadArea.classList.add("dragover");
+    });
+
+    uploadArea.addEventListener("dragleave", () => {
+      uploadArea.classList.remove("dragover");
+    });
+
+    uploadArea.addEventListener("drop", (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove("dragover");
+      const file = e.dataTransfer.files[0];
+      resumeInput.files = e.dataTransfer.files;
+      handleFileUpload(file);
+    });
+
+    resumeInput.addEventListener("change", () => {
+      if (resumeInput.files.length > 0) {
+        handleFileUpload(resumeInput.files[0]);
+      }
+    });
+
+    async function handleFileUpload(file) {
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append('resume', file);
+      formData.append('userId', user.uid);
+
+      try {
+        uploadArea.querySelector("p").textContent = 'Uploading...';
+        const response = await interviewAPI.uploadResume(formData);
+
+        if (response.success) {
+          uploadedResumeId = response.resumeId;
+          uploadArea.querySelector("p").textContent = `✅ Uploaded: ${response.fileName || file.name}`;
+          startBtn.disabled = !checkbox.checked;
+        } else {
+          uploadArea.querySelector("p").textContent = `❌ Upload failed: ${response.message}`;
+          startBtn.disabled = true;
+        }
+      } catch (err) {
+        console.error("Upload error:", err);
+        uploadArea.querySelector("p").textContent = `❌ Error: ${err.message}`;
+        startBtn.disabled = true;
+      }
+    }
+
+    startBtn.addEventListener("click", async () => {
+      if (!uploadedResumeId) {
+        alert('Please upload your resume first!');
+        return;
+      }
+
+      try {
+        startBtn.textContent = 'Starting...';
+        startBtn.disabled = true;
+
+        const response = await interviewAPI.startInterview({
+          userId: user.uid,
+          resumeId: uploadedResumeId
+        });
+
+        if (response.success) {
+          storage.setInterviewId(response.interviewId);
+          window.location.href = 'studio.html';
+        } else {
+          alert('Failed to start interview: ' + response.message);
+        }
+      } catch (err) {
+        alert('Failed to start interview: ' + err.message);
+      } finally {
+        startBtn.textContent = 'Start AI Interview';
+        startBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
